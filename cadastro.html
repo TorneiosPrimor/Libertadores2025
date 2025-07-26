@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Cadastro e Gerenciamento do Campeonato</title>
+  <style>
+    :root{
+        --color-1: #fff;
+        --color-2: #000;
+        --color-3: #1a1a1a;
+    }
+    body { font-family: Arial, sans-serif; background: var(--color-2); color: #f0f0f0; padding: 20px; }
+    input, button, select { padding: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; background-color: #333; color: #f0f0f0; border: 1px solid #555; border-radius: 4px; }
+    label { margin-top: 10px; display: block; }
+    .section { margin-bottom: 20px; padding: 20px; background: #1e1e1e; border-radius: 8px; }
+    h1, h2, h3 { color: var(--color-1); }
+    button { cursor: pointer; background-color: var(--color-1); color: var(--color-2); font-weight: bold; border: none; }
+    button:hover { background-color: #e1e1e1; }
+    .tab-container { display: flex; border-bottom: 2px solid #333; margin-bottom: 20px; }
+    .tab { padding: 10px 20px; cursor: pointer; background: #1e1e1e; border: none; color: #f0f0f0; font-size: 16px; border-radius: 6px 6px 0 0; }
+    .tab.active { background: var(--color-1); color: var(--color-2); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .item-gerenciamento { background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+    .item-gerenciamento .info { flex-grow: 1; min-width: 200px; }
+    .item-gerenciamento .actions button { width: auto; padding: 6px 12px; margin-left: 10px; margin-top: 5px; }
+    .btn-delete { background-color: #e91e63; color: white; }
+    .btn-delete:hover { background-color: #c2185b; }
+    .btn-edit { background-color: #ff9800; color: white; }
+    .btn-edit:hover { background-color: #f57c00; }
+    #btnCancelarEdicao { display: none; background-color: #757575; color: white; }
+    #btnCancelarEdicao:hover { background-color: #616161; }
+
+    .tabs{
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        flex-direction: row;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    .tabs button{
+        max-width: 150px;
+    }
+    .tabs button a{
+        text-decoration: none;
+        color: var(--color-2);
+        padding: .3rem;
+        font-size: medium;
+    }
+    
+    @keyframes fade-in-out {
+      0% { opacity: 0; transform: translateY(20px); }
+      10% { opacity: 1; transform: translateY(0); }
+      90% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(20px); }
+    }
+    .animate-fade-in-out {
+      animation: fade-in-out 4s ease-in-out forwards;
+    }
+  </style>
+</head>
+<body>
+    <div class="tabs">
+        <button><a href="index.html">Página Inicial</a></button>
+        <button><a href="edicao.html">Página Edição</a></button>
+    </div>
+  <h1>Cadastro e Gerenciamento do Campeonato</h1>
+
+  <!-- SEÇÃO DE CADASTRO -->
+  <div class="section" id="secao-cadastro">
+    <h2>📝 Cadastros</h2>
+    <div id="cadastro-forms">
+      <h3>➕ Cadastrar Time</h3>
+      <label for="nomeTime">Nome do Time:</label>
+      <input type="text" id="nomeTime" />
+      <label for="abreviacaoTime">Nome Abreviado / Sigla:</label>
+      <input type="text" id="abreviacaoTime" placeholder="Ex: COR, SPFC, Flamengo" />
+      <button id="btnCadastrarTime">Cadastrar Time</button>
+
+      <h3 style="margin-top: 20px;">➕ Cadastrar Jogador</h3>
+      <label for="selectTimeJogador">Selecione o Time:</label>
+      <select id="selectTimeJogador"><option value="">Carregando times...</option></select>
+      <label for="nomeJogador">Nome do Jogador:</label>
+      <input type="text" id="nomeJogador" />
+      <label for="numeroJogador">Número da Camisa (opcional):</label>
+      <input type="number" id="numeroJogador" placeholder="Deixe vazio se não souber" />
+      <button id="btnCadastrarJogador">Cadastrar Jogador</button>
+
+      <h3 style="margin-top: 20px;" id="tituloFormJogo">➕ Cadastrar Jogo</h3>
+      <label for="nomeJogo">Nome do Jogo (ex: Semifinal 1):</label>
+      <input type="text" id="nomeJogo" placeholder="Informe um nome para o jogo" />
+      <label for="dataJogo">Data:</label>
+      <input type="date" id="dataJogo" />
+      <label for="horaJogo">Hora:</label>
+      <input type="time" id="horaJogo" />
+      <label for="faseJogo">Fase:</label>
+      <select id="faseJogo">
+        <option value="fase1">Primeira Fase</option>
+        <option value="fase_eliminatoria">Eliminatórias</option>
+      </select>
+      <label for="selectTimeA">Selecione o Time A:</label>
+      <select id="selectTimeA"></select>
+      <label for="selectTimeB">Selecione o Time B:</label>
+      <select id="selectTimeB"></select>
+      <button id="btnCadastrarJogo">Cadastrar Jogo</button>
+      <button id="btnCancelarEdicao">Cancelar Edição</button>
+    </div>
+  </div>
+
+  <!-- SEÇÃO DE GERENCIAMENTO -->
+  <div class="section">
+    <h2>⚙️ Gerenciamento</h2>
+    <div class="tab-container">
+      <button class="tab active" onclick="openTab(event, 'tabTimes')">Times</button>
+      <button class="tab" onclick="openTab(event, 'tabJogadores')">Jogadores</button>
+      <button class="tab" onclick="openTab(event, 'tabJogos')">Jogos</button>
+    </div>
+
+    <div id="tabTimes" class="tab-content active">
+      <h3>Times Cadastrados</h3>
+      <div id="listaTimes">Carregando...</div>
+    </div>
+    <div id="tabJogadores" class="tab-content">
+      <h3>Jogadores Cadastrados</h3>
+      <div id="listaJogadores">Carregando...</div>
+    </div>
+    <div id="tabJogos" class="tab-content">
+       <h3>Jogos Cadastrados</h3>
+       <div id="listaJogos">Carregando...</div>
+    </div>
+  </div>
+
+  <!-- Modal para Confirmação e Edição -->
+  <div id="customModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden items-center justify-center p-4">
+    <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md border border-gray-700">
+      <h3 id="modalTitle" class="text-xl font-bold text-white mb-4"></h3>
+      <div id="modalBody" class="space-y-4"></div>
+      <div id="modalActions" class="mt-6 flex justify-end gap-4">
+        <button id="modalCancel" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Cancelar</button>
+        <button id="modalConfirm" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Container para Notificações (Toasts) -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-3"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBuS_X7qgNMBAQt4zOc0H9djkXFaYvXBTQ",
+      authDomain: "torneio-6eee6.firebaseapp.com",
+      databaseURL: "https://torneio-6eee6-default-rtdb.firebaseio.com",
+      projectId: "torneio-6eee6",
+      storageBucket: "torneio-6eee6.appspot.com",
+      messagingSenderId: "3656695266",
+      appId: "1:3656695266:web:9a8a9ae9b19bbafb09cdbb",
+      measurementId: "G-V4MD1PYKL3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let modoEdicaoJogo = null;
+    let timesMap = new Map();
+
+    const modal = document.getElementById('customModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    const modalConfirm = document.getElementById('modalConfirm');
+    const modalCancel = document.getElementById('modalCancel');
+    let confirmCallback = null;
+
+    function showModal() { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    function hideModal() { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+    
+    modalCancel.onclick = hideModal;
+    modalConfirm.onclick = () => {
+        if (confirmCallback) {
+            confirmCallback();
+        }
+        hideModal();
+    };
+
+    function showToast(message, type = 'success') {
+        const toastContainer = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+        toast.className = `p-4 rounded-lg text-white shadow-lg animate-fade-in-out ${bgColor}`;
+        toast.textContent = message;
+        toastContainer.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    function showConfirm(title, onConfirm) {
+        modalTitle.textContent = title;
+        modalBody.innerHTML = '<p class="text-gray-300">Esta ação não pode ser desfeita.</p>';
+        modalConfirm.textContent = 'Confirmar';
+        confirmCallback = onConfirm;
+        showModal();
+    }
+
+    function showPrompt(title, inputs, onConfirm) {
+        modalTitle.textContent = title;
+        modalBody.innerHTML = '';
+        inputs.forEach(input => {
+            const label = document.createElement('label');
+            label.className = 'block text-sm font-medium text-gray-300';
+            label.textContent = input.label;
+            const inputEl = document.createElement('input');
+            inputEl.type = input.type || 'text';
+            inputEl.id = `modal-input-${input.id}`;
+            inputEl.value = input.value || '';
+            if (input.maxLength) {
+                inputEl.maxLength = input.maxLength;
+            }
+            inputEl.className = 'mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm';
+            modalBody.appendChild(label);
+            modalBody.appendChild(inputEl);
+        });
+
+        confirmCallback = () => {
+            const results = {};
+            inputs.forEach(input => {
+                results[input.id] = document.getElementById(`modal-input-${input.id}`).value;
+            });
+            onConfirm(results);
+        };
+        modalConfirm.textContent = 'Salvar';
+        showModal();
+    }
+
+    function gerarId(nome) {
+      return nome.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    }
+
+    window.openTab = function(evt, tabName) {
+      let i, tabcontent, tablinks;
+      tabcontent = document.getElementsByClassName("tab-content");
+      for (i = 0; i < tabcontent.length; i++) { tabcontent[i].style.display = "none"; }
+      tablinks = document.getElementsByClassName("tab");
+      for (i = 0; i < tablinks.length; i++) { tablinks[i].className = tablinks[i].className.replace(" active", ""); }
+      document.getElementById(tabName).style.display = "block";
+      evt.currentTarget.className += " active";
+    }
+    
+    function cadastrarTime() {
+      const nome = document.getElementById('nomeTime').value.trim();
+      // LÓGICA ATUALIZADA: .toUpperCase() removido
+      const abreviacao = document.getElementById('abreviacaoTime').value.trim();
+      if (!nome) return showToast("Nome do time é obrigatório.", "error");
+      if (!abreviacao) return showToast("A abreviação é obrigatória.", "error");
+      
+      const id = gerarId(nome);
+      set(ref(db, 'times/' + id), {
+        nome,
+        abreviacao,
+        estatisticas: { gols: 0, cartoesAmarelos: 0, cartoesVermelhos: 0 }
+      }).then(() => {
+        showToast(`Time "${nome}" cadastrado com sucesso!`);
+        document.getElementById('nomeTime').value = '';
+        document.getElementById('abreviacaoTime').value = '';
+      });
+    };
+
+    function cadastrarJogador() {
+        const idTime = document.getElementById('selectTimeJogador').value;
+        const nome = document.getElementById('nomeJogador').value.trim();
+        const numeroRaw = document.getElementById('numeroJogador').value;
+        const numero = numeroRaw === "" ? "null" : parseInt(numeroRaw);
+        if (!idTime || !nome) return showToast("Selecione um time e preencha o nome do jogador.", "error");
+        const idJogador = gerarId(nome);
+        set(ref(db, `times/${idTime}/jogadores/${idJogador}`), {
+            nome, numero, gols: 0, cartoesAmarelos: 0, cartoesVermelhos: 0, suspenso: false
+        }).then(() => {
+            showToast(`Jogador "${nome}" cadastrado.`);
+            document.getElementById('nomeJogador').value = '';
+            document.getElementById('numeroJogador').value = '';
+        });
+    };
+
+    function cadastrarOuAtualizarJogo() {
+        if (modoEdicaoJogo) {
+            salvarAlteracoesJogo();
+        } else {
+            cadastrarNovoJogo();
+        }
+    }
+
+    function cadastrarNovoJogo() {
+        const nomeJogo = document.getElementById('nomeJogo').value.trim();
+        const data = document.getElementById('dataJogo').value;
+        const hora = document.getElementById('horaJogo').value;
+        const fase = document.getElementById('faseJogo').value;
+        let timeA = document.getElementById('selectTimeA').value;
+        let timeB = document.getElementById('selectTimeB').value;
+
+        if (!nomeJogo || !data || !hora) return showToast("Nome, data e hora do jogo são obrigatórios.", "error");
+        if (fase === 'fase1' && (!timeA || !timeB)) return showToast("Para a Primeira Fase, ambos os times devem ser selecionados.", "error");
+        if (timeA && timeB && timeA === timeB) return showToast("Os times não podem ser iguais.", "error");
+
+        const idJogo = gerarId(nomeJogo);
+        const jogoRef = ref(db, `jogos/${fase}/${idJogo}`);
+        const jogoData = {
+            nome: nomeJogo, data, hora, timeA_id: timeA || "a-definir", timeB_id: timeB || "a-definir", jogoEncerrado: false, jogoAndamento: false,
+            estatisticas: { timeA: {}, timeB: {} }
+        };
+        set(jogoRef, jogoData).then(() => {
+            showToast("Jogo cadastrado com sucesso!");
+            limparFormJogo();
+        });
+    };
+
+    function carregarDadosGerenciamento() {
+        const timesRef = ref(db, 'times');
+        const jogosRef = ref(db, 'jogos');
+
+        onValue(timesRef, (snapshot) => {
+            const listaTimesEl = document.getElementById('listaTimes');
+            const listaJogadoresEl = document.getElementById('listaJogadores');
+            listaTimesEl.innerHTML = '';
+            listaJogadoresEl.innerHTML = '';
+            timesMap.clear();
+            let optionsHtml = '<option value="">-- Selecione um Time --</option>';
+
+            if (snapshot.exists()) {
+                const timesData = snapshot.val();
+                renderizarListaTimes(timesData);
+                for (const timeId in timesData) {
+                    const time = timesData[timeId];
+                    timesMap.set(timeId, time.nome);
+                    optionsHtml += `<option value="${timeId}">${time.nome}</option>`;
+                }
+            } else {
+                listaTimesEl.innerHTML = 'Nenhum time cadastrado.';
+                listaJogadoresEl.innerHTML = 'Nenhum jogador cadastrado.';
+                optionsHtml = '<option value="">Nenhum time cadastrado</option>';
+            }
+            ['selectTimeJogador', 'selectTimeA', 'selectTimeB'].forEach(id => {
+                const selectElement = document.getElementById(id);
+                if(selectElement) selectElement.innerHTML = optionsHtml;
+            });
+        });
+
+        onValue(jogosRef, (snapshot) => {
+            const listaJogosEl = document.getElementById('listaJogos');
+            listaJogosEl.innerHTML = '';
+            if (snapshot.exists()) {
+                const fases = snapshot.val();
+                for (const fase in fases) {
+                    const jogos = fases[fase];
+                    for (const jogoId in jogos) {
+                        const jogo = jogos[jogoId];
+                        const nomeTimeA = timesMap.get(jogo.timeA_id) || 'A Definir';
+                        const nomeTimeB = timesMap.get(jogo.timeB_id) || 'A Definir';
+                        listaJogosEl.innerHTML += `
+                            <div class="item-gerenciamento" id="jogo-${fase}-${jogoId}">
+                                <div class="info"><strong>${jogo.nome}</strong> (${fase})<br><small>${nomeTimeA} vs ${nomeTimeB} - ${jogo.data} ${jogo.hora}</small></div>
+                                <div class="actions">
+                                    <button class="btn-edit" onclick='prepararEdicaoJogo(${JSON.stringify({fase, jogoId, ...jogo})})'>Editar</button>
+                                    <button class="btn-delete" onclick="deletarJogo('${fase}', '${jogoId}')">Excluir</button>
+                                </div>
+                            </div>`;
+                    }
+                }
+            } else {
+                listaJogosEl.innerHTML = 'Nenhum jogo cadastrado.';
+            }
+        });
+    }
+
+    function renderizarListaTimes(timesData) {
+        const listaTimesEl = document.getElementById('listaTimes');
+        const listaJogadoresEl = document.getElementById('listaJogadores');
+        listaTimesEl.innerHTML = '';
+        listaJogadoresEl.innerHTML = '';
+        for (const timeId in timesData) {
+            const time = timesData[timeId];
+            listaTimesEl.innerHTML += `
+                <div class="item-gerenciamento" id="time-${timeId}">
+                    <div class="info"><strong>${time.nome}</strong> (${time.abreviacao || 'N/A'}) - ID: ${timeId}</div>
+                    <div class="actions">
+                        <button class="btn-edit" onclick='editarTime(${JSON.stringify({id: timeId, nome: time.nome, abreviacao: time.abreviacao})})'>Editar</button>
+                        <button class="btn-delete" onclick="deletarTime('${timeId}', '${time.nome}')">Excluir</button>
+                    </div>
+                </div>`;
+            if (time.jogadores) {
+                for (const jogadorId in time.jogadores) {
+                    const jogador = time.jogadores[jogadorId];
+                    listaJogadoresEl.innerHTML += `
+                        <div class="item-gerenciamento" id="jogador-${timeId}-${jogadorId}">
+                            <div class="info"><strong>${jogador.nome}</strong> (${time.nome}) - Camisa: ${jogador.numero === 'null' ? 'N/A' : jogador.numero}</div>
+                            <div class="actions">
+                                <button class="btn-edit" onclick='editarJogador(${JSON.stringify({timeId, jogadorId, ...jogador})})'>Editar</button>
+                                <button class="btn-delete" onclick="deletarJogador('${timeId}', '${jogadorId}', '${jogador.nome}')">Excluir</button>
+                            </div>
+                        </div>`;
+                }
+            }
+        }
+    }
+
+    window.prepararEdicaoJogo = function(jogo) {
+        modoEdicaoJogo = { fase: jogo.fase, jogoId: jogo.jogoId, ...jogo };
+        document.getElementById('tituloFormJogo').textContent = `✏️ Editando Jogo: ${jogo.nome}`;
+        document.getElementById('nomeJogo').value = jogo.nome;
+        document.getElementById('dataJogo').value = jogo.data;
+        document.getElementById('horaJogo').value = jogo.hora;
+        document.getElementById('faseJogo').value = jogo.fase;
+        document.getElementById('selectTimeA').value = jogo.timeA_id;
+        document.getElementById('selectTimeB').value = jogo.timeB_id;
+        document.getElementById('btnCadastrarJogo').textContent = 'Salvar Alterações';
+        document.getElementById('btnCancelarEdicao').style.display = 'inline-block';
+        document.getElementById('secao-cadastro').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function salvarAlteracoesJogo() {
+        if (!modoEdicaoJogo) return;
+        const { fase, jogoId } = modoEdicaoJogo;
+        const dadosAtualizados = {
+            nome: document.getElementById('nomeJogo').value.trim(), data: document.getElementById('dataJogo').value,
+            hora: document.getElementById('horaJogo').value, fase: document.getElementById('faseJogo').value,
+            timeA_id: document.getElementById('selectTimeA').value || "a-definir", timeB_id: document.getElementById('selectTimeB').value || "a-definir",
+        };
+        const novaFase = dadosAtualizados.fase;
+        const dadosCompletos = { ...modoEdicaoJogo, ...dadosAtualizados };
+
+        if (novaFase !== fase) {
+            const jogoAntigoRef = ref(db, `jogos/${fase}/${jogoId}`);
+            const jogoNovoRef = ref(db, `jogos/${novaFase}/${jogoId}`);
+            set(jogoNovoRef, dadosCompletos).then(() => {
+                remove(jogoAntigoRef);
+                showToast("Jogo movido e atualizado com sucesso!");
+                cancelarEdicao();
+            }).catch(err => showToast("Erro ao mover: " + err.message, 'error'));
+        } else {
+            const jogoRef = ref(db, `jogos/${fase}/${jogoId}`);
+            update(jogoRef, dadosAtualizados).then(() => {
+                showToast("Jogo atualizado com sucesso!");
+                cancelarEdicao();
+            }).catch(err => showToast("Erro ao atualizar: " + err.message, 'error'));
+        }
+    }
+
+    function cancelarEdicao() {
+        modoEdicaoJogo = null;
+        document.getElementById('tituloFormJogo').textContent = '➕ Cadastrar Jogo';
+        document.getElementById('btnCadastrarJogo').textContent = 'Cadastrar Jogo';
+        document.getElementById('btnCancelarEdicao').style.display = 'none';
+        limparFormJogo();
+    }
+
+    function limparFormJogo() {
+        document.getElementById('nomeJogo').value = ''; document.getElementById('dataJogo').value = '';
+        document.getElementById('horaJogo').value = ''; document.getElementById('faseJogo').value = 'fase1';
+        document.getElementById('selectTimeA').value = ''; document.getElementById('selectTimeB').value = '';
+    }
+
+    window.editarTime = function(time) {
+        showPrompt('Editar Time', [
+            { id: 'nome', label: 'Novo nome:', value: time.nome },
+            { id: 'abreviacao', label: 'Abreviação / Sigla:', value: time.abreviacao || '' }
+        ], (results) => {
+            const novoNome = results.nome.trim();
+            // LÓGICA ATUALIZADA: .toUpperCase() removido
+            const novaAbreviacao = results.abreviacao.trim();
+            if (novoNome && novaAbreviacao) {
+                update(ref(db, 'times/' + time.id), { 
+                    nome: novoNome,
+                    abreviacao: novaAbreviacao
+                })
+                    .then(() => showToast("Time atualizado com sucesso!"))
+                    .catch(err => showToast("Erro ao atualizar: " + err.message, 'error'));
+            } else {
+                showToast("Preencha todos os campos.", "error");
+            }
+        });
+    };
+
+    window.deletarTime = function(timeId, nomeTime) {
+        showConfirm(`Excluir o time "${nomeTime}"?`, () => {
+            remove(ref(db, 'times/' + timeId))
+                .then(() => showToast("Time excluído com sucesso!"))
+                .catch(err => showToast("Erro ao excluir: " + err.message, 'error'));
+        });
+    };
+
+    window.editarJogador = function(jogador) {
+        showPrompt('Editar Jogador', [
+            { id: 'nome', label: 'Nome do jogador:', value: jogador.nome },
+            { id: 'numero', label: 'Número da camisa:', value: jogador.numero === 'null' ? '' : jogador.numero, type: 'number' }
+        ], (results) => {
+            const novoNome = results.nome.trim();
+            if (novoNome) {
+                const novoNumero = results.numero.trim() === "" ? "null" : parseInt(results.numero);
+                update(ref(db, `times/${jogador.timeId}/jogadores/${jogador.jogadorId}`), { nome: novoNome, numero: novoNumero })
+                    .then(() => showToast("Jogador atualizado com sucesso!"))
+                    .catch(err => showToast("Erro ao atualizar: " + err.message, 'error'));
+            }
+        });
+    };
+
+    window.deletarJogador = function(timeId, jogadorId, nomeJogador) {
+        showConfirm(`Excluir o jogador "${nomeJogador}"?`, () => {
+            remove(ref(db, `times/${timeId}/jogadores/${jogadorId}`))
+                .then(() => showToast("Jogador excluído com sucesso!"))
+                .catch(err => showToast("Erro ao excluir: " + err.message, 'error'));
+        });
+    };
+    
+    window.deletarJogo = function(fase, jogoId) {
+        showConfirm(`Tem certeza que deseja excluir este jogo?`, () => {
+            remove(ref(db, `jogos/${fase}/${jogoId}`))
+                .then(() => showToast("Jogo excluído com sucesso!"))
+                .catch(err => showToast("Erro ao excluir: " + err.message, 'error'));
+        });
+    };
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('btnCadastrarTime').addEventListener('click', cadastrarTime);
+        document.getElementById('btnCadastrarJogador').addEventListener('click', cadastrarJogador);
+        document.getElementById('btnCadastrarJogo').addEventListener('click', cadastrarOuAtualizarJogo);
+        document.getElementById('btnCancelarEdicao').addEventListener('click', cancelarEdicao);
+        carregarDadosGerenciamento();
+    });
+
+  </script>
+</body>
+</html>

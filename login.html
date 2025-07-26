@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Painel de Edição</title>
+    <style>
+        :root{
+            --color-1: #fff;
+            --color-2: #000;
+            --color-3: #121212;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: var(--color-3);
+            color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background: #1e1e1e;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 300px;
+            border: 1px solid var(--color-1);
+            text-align: center; /* Centraliza o conteúdo */
+        }
+        h1 {
+            color: var(--color-1);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+            text-align: left; /* Alinha os labels à esquerda */
+        }
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            background: var(--color-3);
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #f0f0f0;
+            box-sizing: border-box; /* Garante que o padding não afete a largura total */
+        }
+        button, .choice-button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--color-1);
+            border: none;
+            color: var(--color-3);
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            text-decoration: none; /* Para a tag <a> parecer um botão */
+            display: inline-block; /* Para a tag <a> se comportar como botão */
+            margin-top: 15px; /* Espaçamento entre os botões de escolha */
+        }
+        button:hover, .choice-button:hover {
+            opacity: 0.9;
+        }
+        #error-message {
+            color: red;
+            text-align: center;
+            margin-top: 15px;
+            height: 20px; /* Deixa um espaço reservado para a mensagem */
+        }
+        /* Container para os botões de escolha, escondido por padrão */
+        #choice-container {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h1 id="panel-title">Painel de Controle</h1>
+        
+        <!-- Formulário de Login -->
+        <form id="login-form">
+            <div>
+                <label for="username">Usuário:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div>
+                <label for="password">Senha:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">Entrar</button>
+            <p id="error-message"></p>
+        </form>
+
+        <!-- Botões de Escolha (Pós-login) -->
+        <div id="choice-container">
+            <a href="cadastro.html" class="choice-button">Ir para Cadastro</a>
+            <a href="edicao.html" class="choice-button">Ir para Edição de Jogos</a>
+        </div>
+    </div>
+
+    <script>
+        // --- Lógica do Login ---
+
+        // 1. Defina seu usuário e senha aqui
+        const USUARIO_CORRETO = "admin";
+        const SENHA_CORRETA = "primor";
+        
+        // (Não precisamos mais do nome do arquivo aqui)
+
+        const loginForm = document.getElementById('login-form');
+        const choiceContainer = document.getElementById('choice-container');
+        const errorMessage = document.getElementById('error-message');
+        const panelTitle = document.getElementById('panel-title');
+
+        loginForm.addEventListener('submit', (event) => {
+            // Previne o recarregamento da página
+            event.preventDefault();
+
+            // Pega os valores digitados pelo usuário
+            const usernameInput = document.getElementById('username').value;
+            const passwordInput = document.getElementById('password').value;
+
+            // Verifica se o usuário e a senha estão corretos
+            if (usernameInput === USUARIO_CORRETO && passwordInput === SENHA_CORRETA) {
+                // Se estiverem corretos:
+                // 1. Esconde o formulário de login
+                loginForm.style.display = 'none';
+                
+                // 2. Mostra os botões de escolha
+                choiceContainer.style.display = 'block';
+
+                // 3. (Opcional) Muda o título
+                panelTitle.textContent = "Bem-vindo!";
+
+            } else {
+                // Se estiverem errados, mostra uma mensagem de erro
+                errorMessage.textContent = "Usuário ou senha inválidos.";
+            }
+        });
+    </script>
+
+</body>
+</html>

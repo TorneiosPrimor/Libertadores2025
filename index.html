@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+  <head>
+    <!-- Meta tags Obrigatórias -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="assets/css/normalize.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/responsividade.css">
+    <link rel="website icon" type="png" href="assets/images/logo-site.png">
+
+    <title>Libertadores 2025 Primor das Torres</title>
+  </head>
+
+  <body>
+    <div class="fundo-desfocado"></div>
+
+    <div id="live-popup-overlay" class="popup-overlay" style="display: none;">
+        <div class="popup-content">
+            <span class="popup-close" onclick="document.getElementById('live-popup-overlay').style.display='none'">&times;</span>
+            <h2><span class="live-indicator"></span>JOGO EM ANDAMENTO</h2>
+            <div id="live-game-details"></div>
+        </div>
+    </div>
+
+    <div class="container">
+
+      <h4 style="margin-top: 2rem;">Site em manutenção...</h4>
+
+
+      <!-- Cabeçalho -->
+      <header id="header">
+        <div class="header">
+          <img class="logoHeader" src="assets/images/Shekinah_white.png" alt="Logo Patrocinador">
+          <img class="logoTorneio" src="assets/images/Logo-Torneio.png" alt="Logo Torneio">
+          <img class="logoHeader" src="assets/images/Logo Primor.png" alt="Logo Patrocinador">
+        </div>
+      </header>
+
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button id="buttonPartidas">Jogos</button>
+        <button id="buttonEliminatorias">Eliminatórias</button>
+        <button id="buttonClassificacao">Classificação</button>
+        <button><a class="buttonEdicao" href="login.html">Login</a></button>
+        <button class="displayNone" id="buttonGaleria">Galeria</button>
+      </div>
+
+    
+      <div class="mainContainer">
+        <div id="loadingMessage" class="loading">
+            <p>Carregando dados...</p>
+        </div>
+
+        <div id="jogosContainer" style="display: none;">
+            <div class="section">
+                <!-- <h2>Fase de Grupos</h2> -->
+                <div id="jogosPrimeiraFase"></div>
+            </div>
+            <div class="section">
+                <!-- <h2>Eliminatórias</h2> -->
+                <div id="jogosEliminatorias"></div>
+            </div>
+        </div>
+        <div id="classificacaoContainer" class="section" style="display: none;">
+            <div id="classificacao" class="classificacao"></div>
+        </div>
+        <div id="suspensosContainer" class="section" style="display: none;">
+            <div id="suspensos"></div>
+        </div>
+        <div id="artilhariaContainer" class="section" style="display: none;">
+            <div id="artilharia"></div>
+        </div>
+        <div id="cartoesContainer" style="display: none;">
+            <div class="section">
+                <div id="cartoesJogadores"></div>
+            </div>
+            <div class="section">
+                <div id="cartoesTimes"></div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="assets/js/index.js"></script>
+    
+  </body>
+
+</html>

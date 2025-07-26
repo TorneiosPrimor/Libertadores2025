@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Editar Jogos do Campeonato</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    :root{
+        --color-1: #fff;
+        --color-2: #000;
+        --color-3: #1a1a1a;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--color-2);
+      color: var(--color-1);
+      padding: 20px;
+    }
+    h1 {
+      color: var(--color-1);
+      margin-bottom: 30px;
+    }
+    /* Estilo para os novos títulos de seção */
+    h2.section-title {
+        color: var(--color-1);
+        border-bottom: 2px solid var(--color-1);
+        padding-bottom: 10px;
+        margin-top: 40px;
+        margin-bottom: 20px;
+        font-size: 24px;
+    }
+    h2.section-title:first-of-type {
+        margin-top: 0;
+    }
+    .jogo {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+    .time-section {
+      border: 1px solid var(--color-1);
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 6px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input[type="number"], input[type="date"], input[type="time"], select {
+      width: 100px;
+      margin-top: 5px;
+      padding: 5px;
+      background: var(--color-2);
+      color: var(--color-1);
+      border: 1px solid var(--color-3);
+      border-radius: 4px;
+      text-align: center;
+    }
+    input[type="checkbox"] {
+      transform: scale(1.3);
+      margin-left: 10px;
+    }
+    button {
+      margin-top: 20px;
+      background-color: var(--color-1);
+      border: none;
+      color: var(--color-2);
+      padding: 10px 20px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    button:hover {
+      background-color: var(--color-1);
+    }
+    .jogadores-lista {
+      margin-top: 10px;
+      max-height: 400px;
+      overflow-y: auto;
+      border-top: 1px solid var(--color-1);
+      padding-top: 10px;
+      background-color: var(--color-2);
+    }
+    .jogador-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--color-1);
+    }
+    .jogador-nome {
+      flex: 1;
+    }
+    .estatisticas-inputs {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .estatisticas-inputs > div {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .gols-contra {
+      margin-top: 10px;
+    }
+    .gols-contra input {
+      width: 50px;
+    }
+    .mensagem {
+      margin-top: 10px;
+      color: #0f0;
+      font-weight: bold;
+    }
+    .aba-jogo {
+        background: var(--color-3);
+        border-radius: 8px;
+        margin-bottom: 20px;
+        overflow: hidden;
+        border: 1px solid var(--color-1);
+    }
+
+    .aba-header {
+        padding: 20px 20px;
+        cursor: pointer;
+        user-select: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: bold;
+        color: var(--color-1);
+    }
+
+    .aba-header:hover {
+        background-color: var(--color-1);
+        color: var(--color-2);
+    }
+
+    .aba-conteudo {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        padding: 0 20px;
+        background: #1e1e1e;
+    }
+
+    .aba-conteudo.expanded {
+        padding-top: 20px;
+        max-height: 4000px; /* grande valor para expandir */
+    }
+
+    .status-indicador {
+        font-weight: normal;
+        font-size: 14px;
+        color: #ffffff;
+        margin-left: 10px;
+    }
+    .tabs{
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        flex-direction: row;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    .tabs button{
+        max-width: 500px;
+    }
+    .tabs button a{
+        text-decoration: none;
+        color: var(--color-2);
+        padding: .3rem;
+        font-size: medium;
+    }
+  </style>
+</head>
+<body>
+    <div class="tabs">
+        <button><a href="index.html">Página Inicial</a></button>
+        <button><a href="cadastro.html">Página Cadastro e Edição dos Jogos e Times</a></button>
+    </div>
+  <h1>Editar Jogos do Campeonato</h1>
+  <button id="btnBaixarPdf" style="margin-bottom: 30px;">Baixar Relatório Completo (PDF)</button>
+
+  <div id="jogosContainer">Carregando jogos...</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+        import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBuS_X7qgNMBAQt4zOc0H9djkXFaYvXBTQ",
+            authDomain: "torneio-6eee6.firebaseapp.com",
+            databaseURL: "https://torneio-6eee6-default-rtdb.firebaseio.com",
+            projectId: "torneio-6eee6",
+            storageBucket: "torneio-6eee6.appspot.com",
+            messagingSenderId: "3656695266",
+            appId: "1:3656695266:web:9a8a9ae9b19bbafb09cdbb",
+            measurementId: "G-V4MD1PYKL3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const btnBaixarPdf = document.getElementById('btnBaixarPdf');
+
+        // Função para formatar a data para o PDF
+        function formatarDataPDF(dataString) {
+            if (!dataString || !dataString.includes('-')) return "A definir";
+            const [ano, mes, dia] = dataString.split('-');
+            return `${dia}/${mes}/${ano}`;
+        }
+
+        // Função principal que gera o PDF
+        function gerarSumulaPDF() {
+            // Inicializa a biblioteca
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(18);
+            doc.text("Súmula do Campeonato", 14, 22);
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            const dataAtual = new Date().toLocaleDateString('pt-BR');
+            doc.text(`Relatório gerado em: ${dataAtual}`, 14, 29);
+
+            let y = 40; // Posição vertical inicial no PDF
+
+            // Itera sobre todos os jogos que já foram carregados
+            todosJogosGlobais.forEach(jogo => {
+                const nomeTimeA = timesMap[jogo.timeA_id]?.nome || "Time A";
+                const nomeTimeB = timesMap[jogo.timeB_id]?.nome || "Time B";
+                
+                // Título do Jogo
+                doc.setFontSize(14);
+                doc.setFont(undefined, 'bold');
+                doc.text(`${nomeTimeA} vs ${nomeTimeB}`, 14, y);
+                y += 7;
+
+                // Informações do Jogo
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                doc.text(`Data: ${formatarDataPDF(jogo.data)} às ${jogo.hora || 'HH:MM'}`, 14, y);
+
+                // --- ALTERAÇÃO 1: EXIBIR PLACAR APENAS SE O JOGO ESTIVER ENCERRADO ---
+                if (jogo.jogoEncerrado) {
+                    let placar = `${jogo.estatisticas?.timeA?.golsTotal ?? 0} x ${jogo.estatisticas?.timeB?.golsTotal ?? 0}`;
+                    if (jogo.fase === 'fase_eliminatoria' && jogo.estatisticas?.penaltis) {
+                        placar += ` (P: ${jogo.estatisticas.penaltis.timeA ?? 0} x ${jogo.estatisticas.penaltis.timeB ?? 0})`;
+                    }
+                    doc.text(`Placar Final: ${placar}`, 100, y);
+                }
+                
+                y += 10;
+
+                // Cabeçalhos da tabela de estatísticas
+                const headers = [['Jogador', 'Gols', 'Amarelos', 'Vermelhos']];
+                const bodyA = [];
+                const bodyB = [];
+                
+                const jogadoresA = timesMap[jogo.timeA_id]?.jogadores || {};
+                const jogadoresB = timesMap[jogo.timeB_id]?.jogadores || {};
+
+                // Coleta estatísticas do Time A
+                for(const jogadorId in jogadoresA) {
+                    const jogador = jogadoresA[jogadorId];
+                    const gols = jogo.estatisticas?.timeA?.gols?.[jogadorId] || 0;
+                    const amarelos = jogo.estatisticas?.timeA?.cartoesAmarelos?.[jogadorId] || 0;
+                    const vermelhos = jogo.estatisticas?.timeA?.cartoesVermelhos?.[jogadorId] || 0;
+                    if (gols > 0 || amarelos > 0 || vermelhos > 0) {
+                        bodyA.push([jogador.nome, gols, amarelos, vermelhos]);
+                    }
+                }
+                if (jogo.estatisticas?.timeA?.golsContra > 0) {
+                    // --- ALTERAÇÃO 2: REMOVER TRAÇOS DOS GOLS CONTRA ---
+                    bodyA.push(['Gol Contra (Adversário)', jogo.estatisticas.timeA.golsContra, '', '']);
+                }
+                
+                // Coleta estatísticas do Time B
+                for(const jogadorId in jogadoresB) {
+                    const jogador = jogadoresB[jogadorId];
+                    const gols = jogo.estatisticas?.timeB?.gols?.[jogadorId] || 0;
+                    const amarelos = jogo.estatisticas?.timeB?.cartoesAmarelos?.[jogadorId] || 0;
+                    const vermelhos = jogo.estatisticas?.timeB?.cartoesVermelhos?.[jogadorId] || 0;
+                    if (gols > 0 || amarelos > 0 || vermelhos > 0) {
+                        bodyB.push([jogador.nome, gols, amarelos, vermelhos]);
+                    }
+                }
+                if (jogo.estatisticas?.timeB?.golsContra > 0) {
+                    // --- ALTERAÇÃO 2: REMOVER TRAÇOS DOS GOLS CONTRA ---
+                    bodyB.push(['Gol Contra (Adversário)', jogo.estatisticas.timeB.golsContra, '', '']);
+                }
+
+                // Desenha a tabela do Time A
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.text(nomeTimeA, 14, y);
+                y += 5;
+                doc.autoTable({
+                    head: headers,
+                    body: bodyA,
+                    startY: y,
+                    theme: 'striped',
+                    headStyles: { fillColor: [41, 128, 185] }
+                });
+                y = doc.autoTable.previous.finalY + 10;
+
+                // Desenha a tabela do Time B
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.text(nomeTimeB, 14, y);
+                y += 5;
+                doc.autoTable({
+                    head: headers,
+                    body: bodyB,
+                    startY: y,
+                    theme: 'striped',
+                    headStyles: { fillColor: [231, 76, 60] }
+                });
+                y = doc.autoTable.previous.finalY + 15;
+                
+                if (y > 270) {
+                    doc.addPage();
+                    y = 20;
+                }
+            });
+
+            doc.save('sumula_campeonato.pdf');
+        }
+
+        // Adiciona o evento de clique ao botão
+        btnBaixarPdf.addEventListener('click', gerarSumulaPDF);
+
+        // NA SUA PÁGINA DE EDIÇÃO, SUBSTITUA ESTA FUNÇÃO
+        function gerarSumulaIndividualPDF(jogo) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const nomeTimeA = timesMap[jogo.timeA_id]?.nome || "Time A";
+            const nomeTimeB = timesMap[jogo.timeB_id]?.nome || "Time B";
+            const jogadoresA = Object.values(timesMap[jogo.timeA_id]?.jogadores || {});
+            const jogadoresB = Object.values(timesMap[jogo.timeB_id]?.jogadores || {});
+
+            // --- CABEÇALHO E INFO DO JOGO (sem alterações) ---
+            doc.setFontSize(20);
+            doc.setFont(undefined, 'bold');
+            doc.text("SÚMULA OFICIAL DA PARTIDA", 105, 20, { align: 'center' });
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Partida: ${nomeTimeA} vs ${nomeTimeB}`, 105, 30, { align: 'center' });
+            doc.text(`Data: ${formatarDataPDF(jogo.data)}`, 14, 40);
+            doc.text(`Horário: ${jogo.hora || '____:____'}`, 80, 40);
+            doc.text(`Local: _________________________`, 130, 40);
+            let finalY = 45;
+
+            // --- SEÇÃO DE PLACAR FINAL (sem alterações) ---
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('Placar Final', 105, finalY + 5, { align: 'center' });
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(nomeTimeA, 65, finalY + 12, { align: 'right' });
+            doc.rect(70, finalY + 8, 15, 8);
+            doc.text('x', 105, finalY + 12, { align: 'center' });
+            doc.rect(125, finalY + 8, 15, 8);
+            doc.text(nomeTimeB, 145, finalY + 12, { align: 'left' });
+            finalY += 25;
+
+            // --- TABELAS LADO A LADO ---
+            const maxRows = Math.max(jogadoresA.length, jogadoresB.length);
+            const body = [];
+            for (let i = 0; i < maxRows; i++) {
+                const jogadorA = jogadoresA[i];
+                const jogadorB = jogadoresB[i];
+                body.push([
+                    jogadorA ? jogadorA.numero || '-' : '',
+                    jogadorA ? jogadorA.nome : '',
+                    '', '', '',
+                    '', // Coluna separadora 
+                    jogadorB ? jogadorB.numero || '-' : '',
+                    jogadorB ? jogadorB.nome : '',
+                    '', '', ''
+                ]);
+            }
+
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text(`Equipe: ${nomeTimeA}`, 14, finalY);
+            doc.text(`Equipe: ${nomeTimeB}`, 115, finalY);
+
+            doc.autoTable({
+                startY: finalY + 5,
+                theme: 'grid',
+                head: [['Nº', 'Nome', 'G', 'CA', 'CV', '', 'Nº', 'Nome', 'G', 'CA', 'CV']],
+                body: body,
+                headStyles: { fillColor: [220, 220, 220], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
+                columnStyles: {
+                    0: { cellWidth: 10, halign: 'center' },
+                    1: { cellWidth: 40 },
+                    2: { cellWidth: 10, halign: 'center' },
+                    3: { cellWidth: 10, halign: 'center' },
+                    4: { cellWidth: 10, halign: 'center' },
+                    // --- ALTERAÇÃO 3: LARGURA DO SEPARADOR AUMENTADA ---
+                    5: { cellWidth: 8 }, // Espaço entre as tabelas
+                    6: { cellWidth: 10, halign: 'center' },
+                    7: { cellWidth: 40 },
+                    8: { cellWidth: 10, halign: 'center' },
+                    9: { cellWidth: 10, halign: 'center' },
+                    10:{ cellWidth: 10, halign: 'center' }
+                },
+                didDrawCell: (data) => {
+                    // Torna as bordas da coluna separadora invisíveis
+                    if (data.column.index === 5) {
+                        doc.setDrawColor(255, 255, 255);
+                    }
+                }
+            });
+            finalY = doc.autoTable.previous.finalY;
+
+            let yPos = finalY + 10;
+            
+            // Seções de Gols Contra e Faltas (sem alterações)
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('Gols Contra', 14, yPos);
+            doc.text('Controle de Faltas', 105, yPos);
+            yPos += 8;
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            doc.text(`${nomeTimeA}:`, 14, yPos, { maxWidth: 35 });
+            doc.rect(50, yPos - 4, 50, 7);
+            doc.text(`${nomeTimeA}:`, 105, yPos, { maxWidth: 35 });
+            doc.rect(140, yPos - 4, 55, 7);
+            yPos += 10;
+            doc.text(`${nomeTimeB}:`, 14, yPos, { maxWidth: 35 });
+            doc.rect(50, yPos - 4, 50, 7);
+            doc.text(`${nomeTimeB}:`, 105, yPos, { maxWidth: 35 });
+            doc.rect(140, yPos - 4, 55, 7);
+            yPos += 15;
+
+            // --- ALTERAÇÃO 2: CAMPO DE OBSERVAÇÕES ESTENDIDO ---
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('Observações', 14, yPos);
+            const obsStartY = yPos + 3;
+            const pageHeight = doc.internal.pageSize.height;
+            const bottomMargin = 15; // Margem inferior da página
+            const obsHeight = pageHeight - obsStartY - bottomMargin; // Calcula a altura para preencher o resto
+            doc.rect(14, obsStartY, 182, obsHeight);
+
+            // --- ALTERAÇÃO 1: SEÇÃO DE ASSINATURAS REMOVIDA ---
+            // (O código que estava aqui foi deletado)
+
+            doc.save(`sumula_${nomeTimeA}_vs_${nomeTimeB}.pdf`);
+        }
+
+        const jogosContainer = document.getElementById("jogosContainer");
+        let todosJogosGlobais = [];
+        let timesMap = {}; 
+
+        function formatarData(dataString) {
+            if (!dataString || !dataString.includes('-')) return "Data indefinida";
+            const [ano, mes, dia] = dataString.split('-');
+            return `${dia}/${mes}/${ano}`;
+        }
+
+        async function iniciarCarregamentoDeJogos() {
+            jogosContainer.innerHTML = "Carregando jogos e times...";
+            try {
+                const [jogosSnapshot, timesSnapshot] = await Promise.all([
+                    get(ref(db, 'jogos')),
+                    get(ref(db, 'times'))
+                ]);
+                
+                if (timesSnapshot.exists()) {
+                    timesMap = timesSnapshot.val();
+                }
+                if (!jogosSnapshot.exists()) {
+                    jogosContainer.innerHTML = "<p>Nenhum jogo cadastrado.</p>";
+                    return;
+                }
+                
+                jogosContainer.innerHTML = "";
+                const jogosData = jogosSnapshot.val();
+                todosJogosGlobais = [];
+                for (const fase in jogosData) {
+                    for (const jogoId in jogosData[fase]) {
+                        todosJogosGlobais.push({ ...jogosData[fase][jogoId], fase, jogoId });
+                    }
+                }
+                todosJogosGlobais.sort((a, b) => new Date(a.data) - new Date(b.data));
+
+                const jogosFase1 = todosJogosGlobais.filter(j => j.fase === 'fase1');
+                const jogosEliminatorias = todosJogosGlobais.filter(j => j.fase === 'fase_eliminatoria');
+
+                if (jogosFase1.length > 0) {
+                    const h2Fase1 = document.createElement('h2');
+                    h2Fase1.textContent = 'Fase de Grupos';
+                    h2Fase1.className = 'section-title';
+                    jogosContainer.appendChild(h2Fase1);
+                    for (const jogo of jogosFase1) {
+                        await renderJogo(jogo.fase, jogo.jogoId, jogo, jogosContainer);
+                    }
+                }
+                if (jogosEliminatorias.length > 0) {
+                    const h2Eliminatorias = document.createElement('h2');
+                    h2Eliminatorias.textContent = 'Eliminatórias';
+                    h2Eliminatorias.className = 'section-title';
+                    jogosContainer.appendChild(h2Eliminatorias);
+                    for (const jogo of jogosEliminatorias) {
+                        await renderJogo(jogo.fase, jogo.jogoId, jogo, jogosContainer);
+                    }
+                }
+                if (todosJogosGlobais.length === 0) {
+                    jogosContainer.innerHTML = "<p>Nenhum jogo cadastrado.</p>";
+                }
+            } catch (error) {
+                jogosContainer.innerHTML = "<p>Erro ao carregar os dados.</p>";
+                console.error(error);
+            }
+        }
+
+        async function pegarJogadoresDoTime(timeId) {
+            if (!timeId || !timesMap[timeId]) return {};
+            return timesMap[timeId].jogadores || {};
+        }
+
+        function criarSeçãoTime(timeNome, timeId, jogadores, jogoAtual, timeKey) {
+            const estatisticasTime = jogoAtual.estatisticas?.[timeKey] || {};
+            const container = document.createElement("div");
+            container.classList.add("time-section");
+            const titulo = document.createElement("h3");
+            titulo.textContent = timeNome || "Time não definido";
+            container.appendChild(titulo);
+            const golsContraLabel = document.createElement("label");
+            golsContraLabel.textContent = "Gols Contra (Gol contra do outro time):";
+            container.appendChild(golsContraLabel);
+            const golsContraInput = document.createElement("input");
+            golsContraInput.type = "number";
+            golsContraInput.min = 0;
+            golsContraInput.value = estatisticasTime.golsContra ?? 0;
+            golsContraInput.style.width = "80px";
+            container.appendChild(golsContraInput);
+            const listaJogadores = document.createElement("div");
+            listaJogadores.classList.add("jogadores-lista");
+            for (const jogadorId in jogadores) {
+                const jogador = jogadores[jogadorId];
+                let jogadorEstaSuspensoNesteJogo = false;
+                if (jogador.suspenso && jogador.suspensoNoJogoId) {
+                    const indiceJogoPunicao = todosJogosGlobais.findIndex(j => j.jogoId === jogador.suspensoNoJogoId);
+                    if (indiceJogoPunicao !== -1) {
+                        for (let i = indiceJogoPunicao + 1; i < todosJogosGlobais.length; i++) {
+                            const proximoJogo = todosJogosGlobais[i];
+                            if (proximoJogo.timeA_id === timeId || proximoJogo.timeB_id === timeId) {
+                                if (proximoJogo.jogoId === jogoAtual.jogoId) {
+                                    jogadorEstaSuspensoNesteJogo = true;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                const divJogador = document.createElement("div");
+                divJogador.classList.add("jogador-item");
+                const nomeSpan = document.createElement("span");
+                nomeSpan.classList.add("jogador-nome");
+                nomeSpan.textContent = `${jogador.nome} ${jogador.numero ? `(#${jogador.numero})` : ''} ${jogadorEstaSuspensoNesteJogo ? '(Suspenso)' : ''}`;
+                if (jogadorEstaSuspensoNesteJogo) {
+                    nomeSpan.style.color = "#ff5252";
+                    nomeSpan.style.fontStyle = "italic";
+                }
+                divJogador.appendChild(nomeSpan);
+                const inputsDiv = document.createElement("div");
+                inputsDiv.classList.add("estatisticas-inputs");
+                const golsInput = document.createElement("input");
+                golsInput.type = "number"; golsInput.min = 0; golsInput.placeholder = "Gols";
+                golsInput.style.width = "50px";
+                golsInput.value = estatisticasTime.gols?.[jogadorId] ?? "";
+                const cartaoAmareloInput = document.createElement("input");
+                cartaoAmareloInput.type = "number"; cartaoAmareloInput.min = 0; cartaoAmareloInput.placeholder = "Amar.";
+                cartaoAmareloInput.style.width = "50px";
+                cartaoAmareloInput.value = estatisticasTime.cartoesAmarelos?.[jogadorId] ?? "";
+                const cartaoVermelhoInput = document.createElement("input");
+                cartaoVermelhoInput.type = "number"; cartaoVermelhoInput.min = 0; cartaoVermelhoInput.placeholder = "Verm.";
+                cartaoVermelhoInput.style.width = "50px";
+                cartaoVermelhoInput.value = estatisticasTime.cartoesVermelhos?.[jogadorId] ?? "";
+                if (jogadorEstaSuspensoNesteJogo) {
+                    golsInput.disabled = true;
+                    cartaoAmareloInput.disabled = true;
+                    cartaoVermelhoInput.disabled = true;
+                }
+                inputsDiv.appendChild(golsInput);
+                inputsDiv.appendChild(cartaoAmareloInput);
+                inputsDiv.appendChild(cartaoVermelhoInput);
+                divJogador.appendChild(inputsDiv);
+                listaJogadores.appendChild(divJogador);
+            }
+            container.appendChild(listaJogadores);
+            return { container, golsContraInput, jogadoresInputs: listaJogadores.querySelectorAll(".estatisticas-inputs > input") };
+        }
+
+        // NA SUA PÁGINA DE EDIÇÃO, SUBSTITUA ESTA FUNÇÃO
+        async function renderJogo(fase, jogoId, jogo, container) {
+            const abaJogo = document.createElement("div");
+            abaJogo.classList.add("aba-jogo");
+            const abaHeader = document.createElement("div");
+            abaHeader.classList.add("aba-header");
+            let inputData, inputHora, inputAndamento, inputEncerrado, inputPenaltisA, inputPenaltisB;
+            
+            function formatarStatus() {
+                if (inputEncerrado.checked) return "Encerrado";
+                if (inputAndamento.checked) return "Em andamento";
+                return "Não iniciado"; // Alterado para ser mais claro
+            }
+
+            const textoHeader = document.createElement("span");
+            const textoResultado = document.createElement("span");
+            textoResultado.style.fontWeight = "bold";
+            textoResultado.style.color = "#00e676";
+            const textoStatus = document.createElement("span");
+            textoStatus.classList.add("status-indicador");
+            const abaConteudo = document.createElement("div");
+            abaConteudo.classList.add("aba-conteudo");
+            
+            const labelData = document.createElement("label");
+            labelData.textContent = "Data:";
+            abaConteudo.appendChild(labelData);
+            inputData = document.createElement("input");
+            inputData.type = "date";
+            inputData.value = jogo.data || "";
+            abaConteudo.appendChild(inputData);
+            
+            const labelHora = document.createElement("label");
+            labelHora.textContent = "Hora:";
+            abaConteudo.appendChild(labelHora);
+            inputHora = document.createElement("input");
+            inputHora.type = "time";
+            inputHora.value = jogo.hora || "";
+            abaConteudo.appendChild(inputHora);
+            
+            const labelAndamento = document.createElement("label");
+            labelAndamento.textContent = "Jogo em Andamento:";
+            inputAndamento = document.createElement("input");
+            inputAndamento.type = "checkbox";
+            inputAndamento.checked = jogo.jogoAndamento === true;
+            labelAndamento.appendChild(inputAndamento);
+            abaConteudo.appendChild(labelAndamento);
+            
+            const labelEncerrado = document.createElement("label");
+            labelEncerrado.textContent = "Jogo Encerrado:";
+            inputEncerrado = document.createElement("input");
+            inputEncerrado.type = "checkbox";
+            inputEncerrado.checked = jogo.jogoEncerrado === true;
+            labelEncerrado.appendChild(inputEncerrado);
+            abaConteudo.appendChild(labelEncerrado);
+
+            // --- CÓDIGO DO ALERTA ADICIONADO AQUI ---
+            const alertaStatus = document.createElement('div');
+            alertaStatus.textContent = 'Atenção: Defina o status do jogo (Em Andamento ou Encerrado).';
+            alertaStatus.style.color = '#e53935'; // Vermelho
+            alertaStatus.style.fontWeight = 'bold';
+            alertaStatus.style.marginTop = '15px';
+            alertaStatus.style.padding = '10px';
+            alertaStatus.style.border = '1px solid #e53935';
+            alertaStatus.style.borderRadius = '4px';
+            alertaStatus.style.textAlign = 'center';
+            abaConteudo.appendChild(alertaStatus);
+
+            // Função para mostrar/esconder o alerta
+            function atualizarVisibilidadeAlerta() {
+                if (!inputAndamento.checked && !inputEncerrado.checked) {
+                    alertaStatus.style.display = 'block';
+                } else {
+                    alertaStatus.style.display = 'none';
+                }
+            }
+            // Verifica o estado inicial ao carregar
+            atualizarVisibilidadeAlerta();
+            // --- FIM DO CÓDIGO DO ALERTA ---
+            
+            inputAndamento.addEventListener('change', () => {
+                if (inputAndamento.checked) inputEncerrado.checked = false;
+                atualizarVisibilidadeAlerta(); // Atualiza o alerta
+            });
+            inputEncerrado.addEventListener('change', () => {
+                if (inputEncerrado.checked) inputAndamento.checked = false;
+                atualizarVisibilidadeAlerta(); // Atualiza o alerta
+            });
+
+            const nomeTimeA = timesMap[jogo.timeA_id]?.nome || jogo.timeA_id;
+            const nomeTimeB = timesMap[jogo.timeB_id]?.nome || jogo.timeB_id;
+            const jogadoresTimeA = await pegarJogadoresDoTime(jogo.timeA_id);
+            const jogadoresTimeB = await pegarJogadoresDoTime(jogo.timeB_id);
+            const timeASection = criarSeçãoTime(nomeTimeA, jogo.timeA_id, jogadoresTimeA, jogo, 'timeA');
+            const timeBSection = criarSeçãoTime(nomeTimeB, jogo.timeB_id, jogadoresTimeB, jogo, 'timeB');
+            abaConteudo.appendChild(timeASection.container);
+            abaConteudo.appendChild(timeBSection.container);
+            
+            const resultadoDiv = document.createElement("div");
+            resultadoDiv.style.marginTop = "15px";
+            resultadoDiv.style.fontWeight = "bold";
+            resultadoDiv.style.fontSize = "18px";
+            resultadoDiv.style.color = "#00e676";
+            
+            if (fase === 'fase_eliminatoria') {
+                const penaltisContainer = document.createElement('div');
+                penaltisContainer.style.marginTop = '20px';
+                penaltisContainer.style.borderTop = '1px solid #ccc';
+                penaltisContainer.style.paddingTop = '15px';
+                const tituloPenaltis = document.createElement('h4');
+                tituloPenaltis.textContent = 'Disputa de Pênaltis';
+                penaltisContainer.appendChild(tituloPenaltis);
+                const divInputs = document.createElement('div');
+                divInputs.style.display = 'flex';
+                divInputs.style.alignItems = 'center';
+                divInputs.style.gap = '10px';
+                const labelA = document.createElement('label');
+                labelA.textContent = `${nomeTimeA}:`;
+                labelA.style.width = 'auto';
+                inputPenaltisA = document.createElement('input');
+                inputPenaltisA.type = 'number';
+                inputPenaltisA.min = 0;
+                inputPenaltisA.value = jogo.estatisticas?.penaltis?.timeA ?? '';
+                inputPenaltisA.style.width = '60px';
+                const labelB = document.createElement('label');
+                labelB.textContent = `${nomeTimeB}:`;
+                labelB.style.width = 'auto';
+                inputPenaltisB = document.createElement('input');
+                inputPenaltisB.type = 'number';
+                inputPenaltisB.min = 0;
+                inputPenaltisB.value = jogo.estatisticas?.penaltis?.timeB ?? '';
+                inputPenaltisB.style.width = '60px';
+                divInputs.appendChild(labelA);
+                divInputs.appendChild(inputPenaltisA);
+                divInputs.appendChild(document.createTextNode('x'));
+                divInputs.appendChild(inputPenaltisB);
+                divInputs.appendChild(labelB);
+                penaltisContainer.appendChild(divInputs);
+                abaConteudo.appendChild(penaltisContainer);
+                inputPenaltisA.addEventListener('change', atualizarResultadoEHeader);
+                inputPenaltisB.addEventListener('change', atualizarResultadoEHeader);
+            }
+
+            abaConteudo.appendChild(resultadoDiv);
+            
+            function atualizarResultadoEHeader() {
+                let somaGolsA = 0, somaGolsB = 0;
+                timeASection.jogadoresInputs.forEach((input, index) => {
+                    if (index % 3 === 0 && !input.disabled) {
+                        const val = input.value.trim();
+                        if (val !== "") somaGolsA += parseInt(val);
+                    }
+                });
+                somaGolsA += parseInt(timeASection.golsContraInput.value) || 0;
+                timeBSection.jogadoresInputs.forEach((input, index) => {
+                    if (index % 3 === 0 && !input.disabled) {
+                        const val = input.value.trim();
+                        if (val !== "") somaGolsB += parseInt(val);
+                    }
+                });
+                somaGolsB += parseInt(timeBSection.golsContraInput.value) || 0;
+                let placarTexto = `${nomeTimeA || "?"} ${somaGolsA} x ${somaGolsB} ${nomeTimeB || "?"}`;
+                if (fase === 'fase_eliminatoria' && inputPenaltisA && inputPenaltisB) {
+                    const penaltisA = inputPenaltisA.value.trim();
+                    const penaltisB = inputPenaltisB.value.trim();
+                    if (penaltisA !== '' || penaltisB !== '') {
+                        placarTexto = `${nomeTimeA || "?"} ${somaGolsA} (${penaltisA || 0}) x (${penaltisB || 0}) ${somaGolsB} ${nomeTimeB || "?"}`;
+                    }
+                }
+                const dataFormatada = formatarData(inputData.value);
+                textoHeader.textContent = `${dataFormatada} ${inputHora.value || "??:??"} - ${nomeTimeA || "?"} x ${nomeTimeB || "?"}`;
+                textoStatus.textContent = formatarStatus();
+                if (inputEncerrado.checked || inputAndamento.checked) {
+                    resultadoDiv.textContent = placarTexto;
+                    textoResultado.textContent = placarTexto;
+                } else {
+                    resultadoDiv.textContent = "";
+                    textoResultado.textContent = "";
+                }
+            }
+            
+            atualizarResultadoEHeader();
+            
+            [inputData, inputHora, inputAndamento, inputEncerrado].forEach(el => el.addEventListener('change', atualizarResultadoEHeader));
+            
+            abaHeader.appendChild(textoHeader);
+            abaHeader.appendChild(textoResultado);
+            abaHeader.appendChild(textoStatus);
+            abaJogo.appendChild(abaHeader);
+            abaJogo.appendChild(abaConteudo);
+            
+            // Cria um container para os botões
+            const botoesContainer = document.createElement('div');
+            botoesContainer.style.display = 'flex';
+            botoesContainer.style.gap = '10px';
+            
+            const btnSalvar = document.createElement("button");
+            btnSalvar.textContent = "Salvar alterações";
+
+            // NOVO BOTÃO PARA GERAR SÚMULA INDIVIDUAL
+            const btnSumulaIndividual = document.createElement("button");
+            btnSumulaIndividual.textContent = "Gerar Súmula para anotações";
+
+            botoesContainer.appendChild(btnSalvar);
+            botoesContainer.appendChild(btnSumulaIndividual);
+            abaConteudo.appendChild(botoesContainer);
+            
+            const msgStatus = document.createElement("div");
+            msgStatus.classList.add("mensagem");
+            abaConteudo.appendChild(msgStatus);
+
+            btnSumulaIndividual.onclick = () => {
+                gerarSumulaIndividualPDF(jogo);
+            };
+
+            // SUBSTITUA A SUA FUNÇÃO 'btnSalvar.onclick' INTEIRA POR ESTA
+            btnSalvar.onclick = async () => {
+                msgStatus.textContent = "Salvando...";
+                if (!inputData.value) { alert("A Data é obrigatória."); msgStatus.textContent = ""; return; }
+
+                const timesSnapshot = await get(ref(db, 'times'));
+                const timesData = timesSnapshot.val() || {};
+                const jogoAntigoSnapshot = await get(ref(db, `jogos/${fase}/${jogoId}`));
+                const jogoAntigoData = jogoAntigoSnapshot.val() || {};
+                const estatsAntigas = jogoAntigoData.estatisticas || { timeA: {}, timeB: {} };
+
+                const updateData = {
+                    data: inputData.value,
+                    hora: inputHora.value,
+                    jogoEncerrado: inputEncerrado.checked,
+                    jogoAndamento: inputAndamento.checked,
+                    estatisticas: { timeA: {}, timeB: {} }
+                };
+
+                let golsJogadoresA = 0, cartoesAmarelosTotalA = 0, cartoesVermelhosTotalA = 0;
+                let golsJogadoresB = 0, cartoesAmarelosTotalB = 0, cartoesVermelhosTotalB = 0;
+
+                function processarInputs(jogadores, timeSectionInputs, timeKey) {
+                    const golsObj = {}, cartoesAmarelosObj = {}, cartoesVermelhosObj = {};
+                    Object.keys(jogadores).forEach((jogadorId, index) => {
+                        const jogadorEstaSuspensoNesteJogo = timeSectionInputs[index * 3].disabled;
+                        if (jogadorEstaSuspensoNesteJogo) return;
+                        const baseIndex = index * 3;
+                        const golsValRaw = timeSectionInputs[baseIndex].value.trim();
+                        const amareloValRaw = timeSectionInputs[baseIndex + 1].value.trim();
+                        const vermelhoValRaw = timeSectionInputs[baseIndex + 2].value.trim();
+                        if (golsValRaw !== "") {
+                            const golsInt = parseInt(golsValRaw);
+                            golsObj[jogadorId] = golsInt;
+                            if (timeKey === "timeA") golsJogadoresA += golsInt; else golsJogadoresB += golsInt;
+                        }
+                        if (amareloValRaw !== "") {
+                            const val = parseInt(amareloValRaw);
+                            cartoesAmarelosObj[jogadorId] = val;
+                            if (timeKey === "timeA") cartoesAmarelosTotalA += val; else cartoesAmarelosTotalB += val;
+                        }
+                        if (vermelhoValRaw !== "") {
+                            const val = parseInt(vermelhoValRaw);
+                            cartoesVermelhosObj[jogadorId] = val;
+                            if (timeKey === "timeA") cartoesVermelhosTotalA += val; else cartoesVermelhosTotalB += val;
+                        }
+                    });
+                    return { golsObj, cartoesAmarelosObj, cartoesVermelhosObj };
+                }
+
+                const timeAStats = processarInputs(jogadoresTimeA, timeASection.jogadoresInputs, "timeA");
+                const timeBStats = processarInputs(jogadoresTimeB, timeBSection.jogadoresInputs, "timeB");
+                const golsContraA = parseInt(timeASection.golsContraInput.value) || 0;
+                const golsContraB = parseInt(timeBSection.golsContraInput.value) || 0;
+
+                function definirGolsTotal(golsDosJogadores, golsContraDoProprioTime, jogoEncerrado, jogoAndamento) {
+                    const somaGols = golsDosJogadores + golsContraDoProprioTime;
+                    return (somaGols === 0 && !jogoEncerrado && !jogoAndamento) ? null : somaGols;
+                }
+
+                updateData.estatisticas.timeA = {
+                    golsContra: golsContraA,
+                    gols: Object.keys(timeAStats.golsObj).length ? timeAStats.golsObj : null,
+                    cartoesAmarelos: Object.keys(timeAStats.cartoesAmarelosObj).length ? timeAStats.cartoesAmarelosObj : null,
+                    cartoesVermelhos: Object.keys(timeAStats.cartoesVermelhosObj).length ? timeAStats.cartoesVermelhosObj : null,
+                    golsTotal: definirGolsTotal(golsJogadoresA, golsContraA, inputEncerrado.checked, inputAndamento.checked),
+                    cartoesAmarelosTotal: cartoesAmarelosTotalA,
+                    cartoesVermelhosTotal: cartoesVermelhosTotalA
+                };
+                updateData.estatisticas.timeB = {
+                    golsContra: golsContraB,
+                    gols: Object.keys(timeBStats.golsObj).length ? timeBStats.golsObj : null,
+                    cartoesAmarelos: Object.keys(timeBStats.cartoesAmarelosObj).length ? timeBStats.cartoesAmarelosObj : null,
+                    cartoesVermelhos: Object.keys(timeBStats.cartoesVermelhosObj).length ? timeBStats.cartoesVermelhosObj : null,
+                    golsTotal: definirGolsTotal(golsJogadoresB, golsContraB, inputEncerrado.checked, inputAndamento.checked),
+                    cartoesAmarelosTotal: cartoesAmarelosTotalB,
+                    cartoesVermelhosTotal: cartoesVermelhosTotalB
+                };
+
+                if (fase === 'fase_eliminatoria') {
+                    const penaltisA = inputPenaltisA.value.trim();
+                    const penaltisB = inputPenaltisB.value.trim();
+                    if (penaltisA !== '' || penaltisB !== '') {
+                        updateData.estatisticas.penaltis = {
+                            timeA: penaltisA !== '' ? parseInt(penaltisA) : null,
+                            timeB: penaltisB !== '' ? parseInt(penaltisB) : null,
+                        };
+                    } else {
+                        updateData.estatisticas.penaltis = null;
+                    }
+                }
+
+                try {
+                    await update(ref(db, `jogos/${fase}/${jogoId}`), updateData);
+                    const updates = {};
+
+                    // --- FUNÇÃO DE LÓGICA DE SUSPENSÃO E CARTÕES TOTALMENTE REFEITA ---
+                    const aplicarDeltasJogadores = (timeId, jogadoresDoTime, novasStatsJogo, antigasStatsJogo, timeData) => {
+                        if (!timeId) return;
+                        const jogadoresAtuaisDoTime = timeData?.jogadores || {};
+
+                        for (const jogadorId in jogadoresDoTime) {
+                            let jogadorInfo = { ...(jogadoresAtuaisDoTime[jogadorId] || {}) };
+                            
+                            let amarelosAcumulados = jogadorInfo.cartoesAmarelos || 0;
+                            let vermelhosAcumulados = jogadorInfo.cartoesVermelhos || 0;
+
+                            // ETAPA 1: VERIFICA SE UMA SUSPENSÃO FOI CUMPRIDA E ZERA OS CARTÕES
+                            if (jogadorInfo.suspenso === true && inputEncerrado.checked) {
+                                const indiceJogoDaPunicao = todosJogosGlobais.findIndex(j => j.jogoId === jogadorInfo.suspensoNoJogoId);
+                                if (indiceJogoDaPunicao !== -1) {
+                                    // Encontra o próximo jogo do time DEPOIS da punição (o jogo que ele ficou fora)
+                                    for (let i = indiceJogoDaPunicao + 1; i < todosJogosGlobais.length; i++) {
+                                        const proximoJogoDoTime = todosJogosGlobais[i];
+                                        if (proximoJogoDoTime.timeA_id === timeId || proximoJogoDoTime.timeB_id === timeId) {
+                                            // Se o jogo que estamos salvando AGORA é o jogo que ele deveria cumprir suspensão
+                                            // E estamos marcando como "encerrado", então a suspensão foi cumprida.
+                                            if (proximoJogoDoTime.jogoId === jogoId) {
+                                                updates[`times/${timeId}/jogadores/${jogadorId}/suspenso`] = null;
+                                                updates[`times/${timeId}/jogadores/${jogadorId}/suspensoNoJogoId`] = null;
+                                                updates[`times/${timeId}/jogadores/${jogadorId}/cartoesAmarelos`] = 0;
+                                                updates[`times/${timeId}/jogadores/${jogadorId}/cartoesVermelhos`] = 0;
+                                                
+                                                // Zera os contadores locais para o próximo cálculo
+                                                amarelosAcumulados = 0;
+                                                vermelhosAcumulados = 0;
+                                            }
+                                            break; // Para a busca após encontrar o próximo jogo
+                                        }
+                                    }
+                                }
+                            }
+
+                            // ETAPA 2: CALCULAR A MUDANÇA (DELTA) DE ESTATÍSTICAS DESTE JOGO
+                            const golsAntigos = antigasStatsJogo.gols?.[jogadorId] || 0;
+                            const golsNovos = novasStatsJogo.gols?.[jogadorId] || 0;
+                            const deltaGols = golsNovos - golsAntigos;
+                            if (deltaGols !== 0) {
+                                updates[`times/${timeId}/jogadores/${jogadorId}/gols`] = (jogadorInfo.gols || 0) + deltaGols;
+                            }
+
+                            const amarelosAntigos = antigasStatsJogo.cartoesAmarelos?.[jogadorId] || 0;
+                            const amarelosNovos = novasStatsJogo.cartoesAmarelos?.[jogadorId] || 0;
+                            const deltaAmarelos = amarelosNovos - amarelosAntigos;
+                            const novoTotalAmarelos = amarelosAcumulados + deltaAmarelos;
+
+                            const vermelhosAntigos = antigasStatsJogo.cartoesVermelhos?.[jogadorId] || 0;
+                            const vermelhosNovos = novasStatsJogo.cartoesVermelhos?.[jogadorId] || 0;
+                            const deltaVermelhos = vermelhosNovos - vermelhosAntigos;
+                            const novoTotalVermelhos = vermelhosAcumulados + deltaVermelhos;
+
+                            // Atualiza o total de cartões no banco (se houver mudança)
+                            if (deltaAmarelos !== 0) updates[`times/${timeId}/jogadores/${jogadorId}/cartoesAmarelos`] = novoTotalAmarelos;
+                            if (deltaVermelhos !== 0) updates[`times/${timeId}/jogadores/${jogadorId}/cartoesVermelhos`] = novoTotalVermelhos;
+
+                            // ETAPA 3: DECIDE O ESTADO FINAL DA SUSPENSÃO (APLICA OU REMOVE)
+                            const deveEstarSuspenso = novoTotalAmarelos >= 3 || novoTotalVermelhos >= 1;
+
+                            if (deveEstarSuspenso && !jogadorInfo.suspenso) {
+                                // APLICA uma nova suspensão
+                                updates[`times/${timeId}/jogadores/${jogadorId}/suspenso`] = true;
+                                updates[`times/${timeId}/jogadores/${jogadorId}/suspensoNoJogoId`] = jogoId;
+                            } else if (!deveEstarSuspenso && jogadorInfo.suspenso === true && jogadorInfo.suspensoNoJogoId === jogoId) {
+                                // REMOVE uma suspensão que foi aplicada por engano NESTE jogo
+                                updates[`times/${timeId}/jogadores/${jogadorId}/suspenso`] = null;
+                                updates[`times/${timeId}/jogadores/${jogadorId}/suspensoNoJogoId`] = null;
+                            }
+                        }
+                    };
+
+                    const aplicarDeltasTime = (timeId, novasStatsJogo, antigasStatsJogo, timeData) => {
+                        if (!timeId) return;
+                        const statsTimeAtual = timeData?.estatisticas || { cartoesAmarelos: 0, cartoesVermelhos: 0 };
+
+                        const amarelosAntigos = antigasStatsJogo.cartoesAmarelosTotal || 0;
+                        const amarelosNovos = novasStatsJogo.cartoesAmarelosTotal || 0;
+                        const deltaAmarelos = amarelosNovos - amarelosAntigos;
+                        if (deltaAmarelos !== 0) {
+                            updates[`times/${timeId}/estatisticas/cartoesAmarelos`] = (statsTimeAtual.cartoesAmarelos || 0) + deltaAmarelos;
+                        }
+
+                        const vermelhosAntigos = antigasStatsJogo.cartoesVermelhosTotal || 0;
+                        const vermelhosNovos = novasStatsJogo.cartoesVermelhosTotal || 0;
+                        const deltaVermelhos = vermelhosNovos - vermelhosAntigos;
+                        if (deltaVermelhos !== 0) {
+                            updates[`times/${timeId}/estatisticas/cartoesVermelhos`] = (statsTimeAtual.cartoesVermelhos || 0) + deltaVermelhos;
+                        }
+                    };
+                    
+                    aplicarDeltasJogadores(jogo.timeA_id, jogadoresTimeA, updateData.estatisticas.timeA, estatsAntigas.timeA, timesData[jogo.timeA_id]);
+                    aplicarDeltasJogadores(jogo.timeB_id, jogadoresTimeB, updateData.estatisticas.timeB, estatsAntigas.timeB, timesData[jogo.timeB_id]);
+                    aplicarDeltasTime(jogo.timeA_id, updateData.estatisticas.timeA, estatsAntigas.timeA, timesData[jogo.timeA_id]);
+                    aplicarDeltasTime(jogo.timeB_id, updateData.estatisticas.timeB, estatsAntigas.timeB, timesData[jogo.timeB_id]);
+                    
+                    if (Object.keys(updates).length > 0) {
+                        await update(ref(db), updates);
+                    }
+                    
+                    msgStatus.textContent = "Alterações salvas com sucesso!";
+                    Object.assign(jogo, jogoAntigoData, updateData);
+                    atualizarResultadoEHeader();
+                    
+                    setTimeout(() => {
+                        msgStatus.textContent = "";
+                    }, 1500);
+
+                } catch (e) {
+                    console.error(e);
+                    msgStatus.textContent = "Erro ao salvar alterações.";
+                }
+            };
+            
+            abaHeader.addEventListener("click", () => {
+                abaConteudo.classList.toggle("expanded");
+            });
+            
+            container.appendChild(abaJogo);
+        }
+        
+        iniciarCarregamentoDeJogos();
+    </script>
+</body>
+</html>
