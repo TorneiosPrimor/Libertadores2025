@@ -260,9 +260,9 @@ function displayJogos(jogosData, jogosAoVivo, timesData) {
                 <tr class="resultado">
                     <td class="imgLeft"><img src="assets/images/${timeA_id}.png" alt="${nomeCompletoA}"></td>
                     <td>${nomeExibicaoA}</td>
-                    <td ${placarClass}>${placarA}</td>
+                    <td class="placar-cell ${placarClass}">${placarA}</td>
                     <td>x</td>
-                    <td ${placarClass}>${placarB}</td>
+                    <td class="placar-cell ${placarClass}">${placarB}</td>
                     <td>${nomeExibicaoB}</td>
                     <td class="imgRight"><img src="assets/images/${timeB_id}.png" alt="${nomeCompletoB}"></td>
                 </tr>
