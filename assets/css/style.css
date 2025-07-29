@@ -610,7 +610,11 @@ h2 {
 }
 
 
-
+/* Adicione esta regra ao seu CSS */
+.placar-cell {
+    white-space: nowrap;
+    text-align: center;
+}
 
 
 .displayNone{
