@@ -80,18 +80,16 @@
       background-color: var(--color-1);
     }
     .jogadores-lista {
-      margin-top: 10px;
-      max-height: 400px;
-      overflow-y: auto;
-      border-top: 1px solid var(--color-1);
-      padding-top: 10px;
-      background-color: var(--color-2);
+        margin-top: 10px;
+        overflow-y: auto;
+        padding: 10px;
+        background-color: var(--color-2);
     }
     .jogador-item {
       display: flex;
       justify-content: space-between;
       padding: 6px 0;
-      border-bottom: 1px solid var(--color-1);
+      border-bottom: 1px solid var(--color-3);
     }
     .jogador-nome {
       flex: 1;
@@ -177,12 +175,30 @@
         padding: .3rem;
         font-size: medium;
     }
+    /* --- NOVOS ESTILOS PARA LAYOUT DE COLUNAS --- */
+    .colunas-container {
+        display: flex;
+        flex-wrap: wrap; /* Permite quebrar linha em telas pequenas */
+        gap: 20px; /* Espaço entre as colunas */
+    }
+
+    .coluna-time {
+        flex: 1; /* Faz com que cada coluna ocupe metade do espaço */
+        min-width: 300px; /* Largura mínima antes de quebrar a linha */
+    }
+    /* Adicione esta regra ao seu CSS */
+    .input-destaque {
+        font-size: 1.1em; /* Aumenta o tamanho da fonte em 10% */
+        font-weight: bold; /* Deixa o texto em negrito */
+        padding: 8px;      /* Adiciona um pouco mais de espaço interno */
+        width: 130px;      /* Aumenta a largura para acomodar o texto maior */
+    }
   </style>
 </head>
 <body>
     <div class="tabs">
-        <button><a href="/Libertadores2025/">Página Inicial</a></button>
-        <button><a href="/Libertadores2025/cadastro.html">Página Cadastro e Edição dos Jogos e Times</a></button>
+        <button><a href="index.html">Página Inicial</a></button>
+        <button><a href="cadastro.html">Página Cadastro e Edição dos Jogos e Times</a></button>
     </div>
   <h1>Editar Jogos do Campeonato</h1>
   <button id="btnBaixarPdf" style="margin-bottom: 30px;">Baixar Relatório Completo (PDF)</button>
@@ -336,7 +352,6 @@
         // Adiciona o evento de clique ao botão
         btnBaixarPdf.addEventListener('click', gerarSumulaPDF);
 
-        // NA SUA PÁGINA DE EDIÇÃO, SUBSTITUA ESTA FUNÇÃO
         function gerarSumulaIndividualPDF(jogo) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -346,7 +361,7 @@
             const jogadoresA = Object.values(timesMap[jogo.timeA_id]?.jogadores || {});
             const jogadoresB = Object.values(timesMap[jogo.timeB_id]?.jogadores || {});
 
-            // --- CABEÇALHO E INFO DO JOGO (sem alterações) ---
+            // --- CABEÇALHO E INFO DO JOGO ---
             doc.setFontSize(20);
             doc.setFont(undefined, 'bold');
             doc.text("SÚMULA OFICIAL DA PARTIDA", 105, 20, { align: 'center' });
@@ -358,7 +373,7 @@
             doc.text(`Local: _________________________`, 130, 40);
             let finalY = 45;
 
-            // --- SEÇÃO DE PLACAR FINAL (sem alterações) ---
+            // --- SEÇÃO DE PLACAR FINAL ---
             doc.setFontSize(14);
             doc.setFont(undefined, 'bold');
             doc.text('Placar Final', 105, finalY + 5, { align: 'center' });
@@ -371,94 +386,97 @@
             doc.text(nomeTimeB, 145, finalY + 12, { align: 'left' });
             finalY += 25;
 
-            // --- TABELAS LADO A LADO ---
-            const maxRows = Math.max(jogadoresA.length, jogadoresB.length);
-            const body = [];
-            for (let i = 0; i < maxRows; i++) {
-                const jogadorA = jogadoresA[i];
-                const jogadorB = jogadoresB[i];
-                body.push([
-                    jogadorA ? jogadorA.numero || '-' : '',
-                    jogadorA ? jogadorA.nome : '',
-                    '', '', '',
-                    '', // Coluna separadora 
-                    jogadorB ? jogadorB.numero || '-' : '',
-                    jogadorB ? jogadorB.nome : '',
-                    '', '', ''
-                ]);
-            }
+            // --- TABELAS DE JOGADORES LADO A LADO ---
+            const bodyA = Object.values(jogadoresA).map(j => [j.numero || '-', j.nome, '', '', '']);
+            const bodyB = Object.values(jogadoresB).map(j => [j.numero || '-', j.nome, '', '', '']);
+            bodyA.unshift(['', 'Gol Contra (A favor)', '', '', '']);
+            bodyB.unshift(['', 'Gol Contra (A favor)', '', '', '']);
 
             doc.setFontSize(12);
             doc.setFont(undefined, 'bold');
             doc.text(`Equipe: ${nomeTimeA}`, 14, finalY);
-            doc.text(`Equipe: ${nomeTimeB}`, 115, finalY);
+            doc.text(`Equipe: ${nomeTimeB}`, 108, finalY);
 
+            const head = [['Nº', 'Nome', 'G', 'CA', 'CV']];
+            const tableStartY = finalY + 5;
+            
+            // Tabela da Esquerda (Time A)
             doc.autoTable({
-                startY: finalY + 5,
+                startY: tableStartY,
+                head: head,
+                body: bodyA,
                 theme: 'grid',
-                head: [['Nº', 'Nome', 'G', 'CA', 'CV', '', 'Nº', 'Nome', 'G', 'CA', 'CV']],
-                body: body,
+                margin: { right: 110 }, // Limita a tabela à metade esquerda
                 headStyles: { fillColor: [220, 220, 220], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
                 columnStyles: {
                     0: { cellWidth: 10, halign: 'center' },
-                    1: { cellWidth: 40 },
+                    1: { cellWidth: 50 },
                     2: { cellWidth: 10, halign: 'center' },
                     3: { cellWidth: 10, halign: 'center' },
-                    4: { cellWidth: 10, halign: 'center' },
-                    // --- ALTERAÇÃO 3: LARGURA DO SEPARADOR AUMENTADA ---
-                    5: { cellWidth: 8 }, // Espaço entre as tabelas
-                    6: { cellWidth: 10, halign: 'center' },
-                    7: { cellWidth: 40 },
-                    8: { cellWidth: 10, halign: 'center' },
-                    9: { cellWidth: 10, halign: 'center' },
-                    10:{ cellWidth: 10, halign: 'center' }
-                },
-                didDrawCell: (data) => {
-                    // Torna as bordas da coluna separadora invisíveis
-                    if (data.column.index === 5) {
-                        doc.setDrawColor(255, 255, 255);
-                    }
+                    4: { cellWidth: 10, halign: 'center' }
                 }
             });
-            finalY = doc.autoTable.previous.finalY;
+            const finalY_A = doc.autoTable.previous.finalY;
+
+            // Tabela da Direita (Time B)
+            doc.autoTable({
+                startY: tableStartY,
+                head: head,
+                body: bodyB,
+                theme: 'grid',
+                margin: { left: 108 }, // Posiciona a tabela na metade direita
+                headStyles: { fillColor: [220, 220, 220], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
+                columnStyles: {
+                    0: { cellWidth: 10, halign: 'center' },
+                    1: { cellWidth: 50 },
+                    2: { cellWidth: 10, halign: 'center' },
+                    3: { cellWidth: 10, halign: 'center' },
+                    4: { cellWidth: 10, halign: 'center' }
+                }
+            });
+            const finalY_B = doc.autoTable.previous.finalY;
+
+            finalY = Math.max(finalY_A, finalY_B); // Pega a altura da maior tabela
 
             let yPos = finalY + 10;
             
-            // Seções de Gols Contra e Faltas (sem alterações)
             doc.setFontSize(14);
             doc.setFont(undefined, 'bold');
-            doc.text('Gols Contra', 14, yPos);
-            doc.text('Controle de Faltas', 105, yPos);
+            doc.text('Controle de Faltas', 105, yPos, { align: 'center' });
             yPos += 8;
             doc.setFontSize(12);
             doc.setFont(undefined, 'normal');
-            doc.text(`${nomeTimeA}:`, 14, yPos, { maxWidth: 35 });
-            doc.rect(50, yPos - 4, 50, 7);
-            doc.text(`${nomeTimeA}:`, 105, yPos, { maxWidth: 35 });
-            doc.rect(140, yPos - 4, 55, 7);
-            yPos += 10;
-            doc.text(`${nomeTimeB}:`, 14, yPos, { maxWidth: 35 });
-            doc.rect(50, yPos - 4, 50, 7);
-            doc.text(`${nomeTimeB}:`, 105, yPos, { maxWidth: 35 });
-            doc.rect(140, yPos - 4, 55, 7);
+
+            const pageMiddle = 105;
+            const gap = 4;
+            const leftColumnEndX = pageMiddle - (gap / 2);
+            const rightColumnStartX = pageMiddle + (gap / 2);
+
+            const labelA = `${nomeTimeA}:`;
+            doc.text(labelA, 14, yPos);
+            const labelAWidth = doc.getTextWidth(labelA);
+            const boxAX = 14 + labelAWidth + 2;
+            doc.rect(boxAX, yPos - 4, leftColumnEndX - boxAX, 7);
+
+            const labelB = `${nomeTimeB}:`;
+            doc.text(labelB, rightColumnStartX, yPos);
+            const labelBWidth = doc.getTextWidth(labelB);
+            const boxBX = rightColumnStartX + labelBWidth + 2;
+            doc.rect(boxBX, yPos - 4, (210 - 14 - boxBX), 7);
             yPos += 15;
 
-            // --- ALTERAÇÃO 2: CAMPO DE OBSERVAÇÕES ESTENDIDO ---
             doc.setFontSize(14);
             doc.setFont(undefined, 'bold');
             doc.text('Observações', 14, yPos);
             const obsStartY = yPos + 3;
             const pageHeight = doc.internal.pageSize.height;
-            const bottomMargin = 15; // Margem inferior da página
-            const obsHeight = pageHeight - obsStartY - bottomMargin; // Calcula a altura para preencher o resto
+            const bottomMargin = 15;
+            const obsHeight = pageHeight - obsStartY - bottomMargin;
             doc.rect(14, obsStartY, 182, obsHeight);
-
-            // --- ALTERAÇÃO 1: SEÇÃO DE ASSINATURAS REMOVIDA ---
-            // (O código que estava aqui foi deletado)
 
             doc.save(`sumula_${nomeTimeA}_vs_${nomeTimeB}.pdf`);
         }
-
+        
         const jogosContainer = document.getElementById("jogosContainer");
         let todosJogosGlobais = [];
         let timesMap = {}; 
@@ -611,11 +629,12 @@
             const abaHeader = document.createElement("div");
             abaHeader.classList.add("aba-header");
             let inputData, inputHora, inputAndamento, inputEncerrado, inputPenaltisA, inputPenaltisB;
-            
+            let selectTimeA, selectTimeB;
+
             function formatarStatus() {
                 if (inputEncerrado.checked) return "Encerrado";
                 if (inputAndamento.checked) return "Em andamento";
-                return "Não iniciado"; // Alterado para ser mais claro
+                return "Não iniciado";
             }
 
             const textoHeader = document.createElement("span");
@@ -633,6 +652,7 @@
             inputData = document.createElement("input");
             inputData.type = "date";
             inputData.value = jogo.data || "";
+            inputData.className = 'input-destaque';
             abaConteudo.appendChild(inputData);
             
             const labelHora = document.createElement("label");
@@ -641,6 +661,7 @@
             inputHora = document.createElement("input");
             inputHora.type = "time";
             inputHora.value = jogo.hora || "";
+            inputHora.className = 'input-destaque';
             abaConteudo.appendChild(inputHora);
             
             const labelAndamento = document.createElement("label");
@@ -692,15 +713,39 @@
                 atualizarVisibilidadeAlerta(); // Atualiza o alerta
             });
 
-            const nomeTimeA = timesMap[jogo.timeA_id]?.nome || jogo.timeA_id;
-            const nomeTimeB = timesMap[jogo.timeB_id]?.nome || jogo.timeB_id;
+            // --- ALTERAÇÃO PRINCIPAL NO LAYOUT ---
+            // 1. Cria o container principal para as colunas
+            const colunasContainer = document.createElement('div');
+            colunasContainer.className = 'colunas-container';
+            
+            // 2. Cria a coluna da esquerda para o Time A
+            const colunaTimeA = document.createElement('div');
+            colunaTimeA.className = 'coluna-time';
+
+            // 3. Cria a coluna da direita para o Time B
+            const colunaTimeB = document.createElement('div');
+            colunaTimeB.className = 'coluna-time';
+
+            const nomeTimeA = timesMap[jogo.timeA_id]?.nome || jogo.timeA_id || "A Definir";
+            const nomeTimeB = timesMap[jogo.timeB_id]?.nome || jogo.timeB_id || "A Definir";
             const jogadoresTimeA = await pegarJogadoresDoTime(jogo.timeA_id);
             const jogadoresTimeB = await pegarJogadoresDoTime(jogo.timeB_id);
+            
             const timeASection = criarSeçãoTime(nomeTimeA, jogo.timeA_id, jogadoresTimeA, jogo, 'timeA');
             const timeBSection = criarSeçãoTime(nomeTimeB, jogo.timeB_id, jogadoresTimeB, jogo, 'timeB');
-            abaConteudo.appendChild(timeASection.container);
-            abaConteudo.appendChild(timeBSection.container);
+
+            // 4. Adiciona cada seção de time à sua respectiva coluna
+            colunaTimeA.appendChild(timeASection.container);
+            colunaTimeB.appendChild(timeBSection.container);
+
+            // 5. Adiciona as colunas ao container principal
+            colunasContainer.appendChild(colunaTimeA);
+            colunasContainer.appendChild(colunaTimeB);
             
+            // 6. Adiciona o container principal à aba de conteúdo
+            abaConteudo.appendChild(colunasContainer);
+            // --- FIM DA ALTERAÇÃO ---
+
             const resultadoDiv = document.createElement("div");
             resultadoDiv.style.marginTop = "15px";
             resultadoDiv.style.fontWeight = "bold";
@@ -785,7 +830,6 @@
             }
             
             atualizarResultadoEHeader();
-            
             [inputData, inputHora, inputAndamento, inputEncerrado].forEach(el => el.addEventListener('change', atualizarResultadoEHeader));
             
             abaHeader.appendChild(textoHeader);
@@ -794,17 +838,15 @@
             abaJogo.appendChild(abaHeader);
             abaJogo.appendChild(abaConteudo);
             
-            // Cria um container para os botões
             const botoesContainer = document.createElement('div');
             botoesContainer.style.display = 'flex';
             botoesContainer.style.gap = '10px';
             
             const btnSalvar = document.createElement("button");
             btnSalvar.textContent = "Salvar alterações";
-
-            // NOVO BOTÃO PARA GERAR SÚMULA INDIVIDUAL
             const btnSumulaIndividual = document.createElement("button");
-            btnSumulaIndividual.textContent = "Gerar Súmula para anotações";
+            btnSumulaIndividual.textContent = "Gerar Súmula";
+            btnSumulaIndividual.style.backgroundColor = '#6c757d'; 
 
             botoesContainer.appendChild(btnSalvar);
             botoesContainer.appendChild(btnSumulaIndividual);
@@ -818,7 +860,6 @@
                 gerarSumulaIndividualPDF(jogo);
             };
 
-            // SUBSTITUA A SUA FUNÇÃO 'btnSalvar.onclick' INTEIRA POR ESTA
             btnSalvar.onclick = async () => {
                 msgStatus.textContent = "Salvando...";
                 if (!inputData.value) { alert("A Data é obrigatória."); msgStatus.textContent = ""; return; }
