@@ -252,18 +252,15 @@
                 const nomeTimeA = timesMap[jogo.timeA_id]?.nome || "Time A";
                 const nomeTimeB = timesMap[jogo.timeB_id]?.nome || "Time B";
                 
-                // Título do Jogo
                 doc.setFontSize(14);
                 doc.setFont(undefined, 'bold');
                 doc.text(`${nomeTimeA} vs ${nomeTimeB}`, 14, y);
                 y += 7;
 
-                // Informações do Jogo
                 doc.setFontSize(10);
                 doc.setFont(undefined, 'normal');
                 doc.text(`Data: ${formatarDataPDF(jogo.data)} às ${jogo.hora || 'HH:MM'}`, 14, y);
 
-                // --- ALTERAÇÃO 1: EXIBIR PLACAR APENAS SE O JOGO ESTIVER ENCERRADO ---
                 if (jogo.jogoEncerrado) {
                     let placar = `${jogo.estatisticas?.timeA?.golsTotal ?? 0} x ${jogo.estatisticas?.timeB?.golsTotal ?? 0}`;
                     if (jogo.fase === 'fase_eliminatoria' && jogo.estatisticas?.penaltis) {
@@ -274,8 +271,8 @@
                 
                 y += 10;
 
-                // Cabeçalhos da tabela de estatísticas
-                const headers = [['Jogador', 'Gols', 'Amarelos', 'Vermelhos']];
+                // MODIFICAÇÃO 1: Adicionado 'Azuis' ao cabeçalho da tabela
+                const headers = [['Jogador', 'Gols', 'Amarelos', 'Azuis', 'Vermelhos']];
                 const bodyA = [];
                 const bodyB = [];
                 
@@ -287,32 +284,34 @@
                     const jogador = jogadoresA[jogadorId];
                     const gols = jogo.estatisticas?.timeA?.gols?.[jogadorId] || 0;
                     const amarelos = jogo.estatisticas?.timeA?.cartoesAmarelos?.[jogadorId] || 0;
+                    const azuis = jogo.estatisticas?.timeA?.cartoesAzuis?.[jogadorId] || 0; // MODIFICAÇÃO 2: Pega o dado do cartão azul
                     const vermelhos = jogo.estatisticas?.timeA?.cartoesVermelhos?.[jogadorId] || 0;
-                    if (gols > 0 || amarelos > 0 || vermelhos > 0) {
-                        bodyA.push([jogador.nome, gols, amarelos, vermelhos]);
+                    
+                    // MODIFICAÇÃO 3: Inclui jogador na lista se ele tiver qualquer estatística, incluindo o cartão azul
+                    if (gols > 0 || amarelos > 0 || vermelhos > 0 || azuis > 0) {
+                        bodyA.push([jogador.nome, gols, amarelos, azuis, vermelhos]); // MODIFICAÇÃO 4: Adiciona o dado à linha da tabela
                     }
                 }
                 if (jogo.estatisticas?.timeA?.golsContra > 0) {
-                    // --- ALTERAÇÃO 2: REMOVER TRAÇOS DOS GOLS CONTRA ---
-                    bodyA.push(['Gol Contra (Adversário)', jogo.estatisticas.timeA.golsContra, '', '']);
+                    bodyA.push(['Gol Contra (Adversário)', jogo.estatisticas.timeA.golsContra, '', '', '']);
                 }
                 
-                // Coleta estatísticas do Time B
+                // Coleta estatísticas do Time B (mesmas modificações)
                 for(const jogadorId in jogadoresB) {
                     const jogador = jogadoresB[jogadorId];
                     const gols = jogo.estatisticas?.timeB?.gols?.[jogadorId] || 0;
                     const amarelos = jogo.estatisticas?.timeB?.cartoesAmarelos?.[jogadorId] || 0;
+                    const azuis = jogo.estatisticas?.timeB?.cartoesAzuis?.[jogadorId] || 0; // Pega cartão azul
                     const vermelhos = jogo.estatisticas?.timeB?.cartoesVermelhos?.[jogadorId] || 0;
-                    if (gols > 0 || amarelos > 0 || vermelhos > 0) {
-                        bodyB.push([jogador.nome, gols, amarelos, vermelhos]);
+                    if (gols > 0 || amarelos > 0 || vermelhos > 0 || azuis > 0) {
+                        bodyB.push([jogador.nome, gols, amarelos, azuis, vermelhos]);
                     }
                 }
                 if (jogo.estatisticas?.timeB?.golsContra > 0) {
-                    // --- ALTERAÇÃO 2: REMOVER TRAÇOS DOS GOLS CONTRA ---
-                    bodyB.push(['Gol Contra (Adversário)', jogo.estatisticas.timeB.golsContra, '', '']);
+                    bodyB.push(['Gol Contra (Adversário)', jogo.estatisticas.timeB.golsContra, '', '', '']);
                 }
 
-                // Desenha a tabela do Time A
+                // O restante da função continua igual...
                 doc.setFontSize(12);
                 doc.setFont(undefined, 'bold');
                 doc.text(nomeTimeA, 14, y);
@@ -326,7 +325,6 @@
                 });
                 y = doc.autoTable.previous.finalY + 10;
 
-                // Desenha a tabela do Time B
                 doc.setFontSize(12);
                 doc.setFont(undefined, 'bold');
                 doc.text(nomeTimeB, 14, y);
@@ -552,9 +550,34 @@
             const estatisticasTime = jogoAtual.estatisticas?.[timeKey] || {};
             const container = document.createElement("div");
             container.classList.add("time-section");
+
+            const tituloContainer = document.createElement('div');
+            tituloContainer.style.display = 'flex';
+            tituloContainer.style.alignItems = 'center';
+            tituloContainer.style.gap = '15px'; // Espaço entre o escudo e o nome
+
+            // Cria o elemento da imagem para o escudo
+            const escudoImg = document.createElement('img');
+            // Define o caminho da imagem conforme sua estrutura (assets/images/{timeId}.png)
+            escudoImg.src = `assets/images/${timeId}.png`;
+            escudoImg.alt = `Escudo do ${timeNome}`;
+            escudoImg.style.height = '40px'; // Ajuste o tamanho conforme necessário
+            escudoImg.style.width = '40px';
+            escudoImg.style.objectFit = 'contain';
+            // Adiciona um evento de erro para o caso de a imagem não ser encontrada
+            escudoImg.onerror = function() { this.style.display = 'none'; };
+
             const titulo = document.createElement("h3");
             titulo.textContent = timeNome || "Time não definido";
-            container.appendChild(titulo);
+            titulo.style.margin = '0'; // Remove a margem padrão do h3 para melhor alinhamento
+
+            // Adiciona o escudo e o título ao container deles
+            tituloContainer.appendChild(escudoImg);
+            tituloContainer.appendChild(titulo);
+
+            // Adiciona o container do título à seção principal do time
+            container.appendChild(tituloContainer);
+
             const golsContraLabel = document.createElement("label");
             golsContraLabel.textContent = "Gols Contra (Gol contra do outro time):";
             container.appendChild(golsContraLabel);
@@ -595,25 +618,38 @@
                 divJogador.appendChild(nomeSpan);
                 const inputsDiv = document.createElement("div");
                 inputsDiv.classList.add("estatisticas-inputs");
+
+                const inputWidth = "45px"; // Largura ajustada para caber mais um campo
                 const golsInput = document.createElement("input");
                 golsInput.type = "number"; golsInput.min = 0; golsInput.placeholder = "Gols";
-                golsInput.style.width = "50px";
+                golsInput.style.width = inputWidth;
                 golsInput.value = estatisticasTime.gols?.[jogadorId] ?? "";
+
                 const cartaoAmareloInput = document.createElement("input");
                 cartaoAmareloInput.type = "number"; cartaoAmareloInput.min = 0; cartaoAmareloInput.placeholder = "Amar.";
-                cartaoAmareloInput.style.width = "50px";
+                cartaoAmareloInput.style.width = inputWidth;
                 cartaoAmareloInput.value = estatisticasTime.cartoesAmarelos?.[jogadorId] ?? "";
+
+                // NOVO INPUT PARA CARTÃO AZUL
+                const cartaoAzulInput = document.createElement("input"); 
+                cartaoAzulInput.type = "number"; cartaoAzulInput.min = 0; cartaoAzulInput.placeholder = "Azul";
+                cartaoAzulInput.style.width = inputWidth;
+                cartaoAzulInput.value = estatisticasTime.cartoesAzuis?.[jogadorId] ?? "";
+
                 const cartaoVermelhoInput = document.createElement("input");
                 cartaoVermelhoInput.type = "number"; cartaoVermelhoInput.min = 0; cartaoVermelhoInput.placeholder = "Verm.";
-                cartaoVermelhoInput.style.width = "50px";
+                cartaoVermelhoInput.style.width = inputWidth;
                 cartaoVermelhoInput.value = estatisticasTime.cartoesVermelhos?.[jogadorId] ?? "";
+
                 if (jogadorEstaSuspensoNesteJogo) {
                     golsInput.disabled = true;
                     cartaoAmareloInput.disabled = true;
+                    cartaoAzulInput.disabled = true;
                     cartaoVermelhoInput.disabled = true;
                 }
                 inputsDiv.appendChild(golsInput);
                 inputsDiv.appendChild(cartaoAmareloInput);
+                inputsDiv.appendChild(cartaoAzulInput);
                 inputsDiv.appendChild(cartaoVermelhoInput);
                 divJogador.appendChild(inputsDiv);
                 listaJogadores.appendChild(divJogador);
@@ -638,6 +674,9 @@
             }
 
             const textoHeader = document.createElement("span");
+            textoHeader.style.display = 'flex';
+            textoHeader.style.alignItems = 'center';
+            textoHeader.style.gap = '8px';
             const textoResultado = document.createElement("span");
             textoResultado.style.fontWeight = "bold";
             textoResultado.style.color = "#00e676";
@@ -658,11 +697,13 @@
             const labelHora = document.createElement("label");
             labelHora.textContent = "Hora:";
             abaConteudo.appendChild(labelHora);
+
             inputHora = document.createElement("input");
             inputHora.type = "time";
             inputHora.value = jogo.hora || "";
             inputHora.className = 'input-destaque';
             abaConteudo.appendChild(inputHora);
+            
             
             const labelAndamento = document.createElement("label");
             labelAndamento.textContent = "Jogo em Andamento:";
@@ -682,7 +723,7 @@
 
             // --- CÓDIGO DO ALERTA ADICIONADO AQUI ---
             const alertaStatus = document.createElement('div');
-            alertaStatus.textContent = 'Atenção: Defina o status do jogo (Em Andamento ou Encerrado).';
+            alertaStatus.textContent = 'Atenção: Defina o status do jogo (Em Andamento ou Encerrado), e sempre que tiver alteração, clicar em SALVAR ALTERAÇÕES.';
             alertaStatus.style.color = '#e53935'; // Vermelho
             alertaStatus.style.fontWeight = 'bold';
             alertaStatus.style.marginTop = '15px';
@@ -796,14 +837,14 @@
             function atualizarResultadoEHeader() {
                 let somaGolsA = 0, somaGolsB = 0;
                 timeASection.jogadoresInputs.forEach((input, index) => {
-                    if (index % 3 === 0 && !input.disabled) {
+                    if (index % 4 === 0 && !input.disabled) {
                         const val = input.value.trim();
                         if (val !== "") somaGolsA += parseInt(val);
                     }
                 });
                 somaGolsA += parseInt(timeASection.golsContraInput.value) || 0;
                 timeBSection.jogadoresInputs.forEach((input, index) => {
-                    if (index % 3 === 0 && !input.disabled) {
+                    if (index % 4 === 0 && !input.disabled) {
                         const val = input.value.trim();
                         if (val !== "") somaGolsB += parseInt(val);
                     }
@@ -818,7 +859,14 @@
                     }
                 }
                 const dataFormatada = formatarData(inputData.value);
-                textoHeader.textContent = `${dataFormatada} ${inputHora.value || "??:??"} - ${nomeTimeA || "?"} x ${nomeTimeB || "?"}`;
+                textoHeader.innerHTML = `
+                    <span>${dataFormatada} ${inputHora.value || "??:??"} - </span>
+                    <span>${nomeTimeA || "?"}</span>
+                    <img src="assets/images/${jogo.timeA_id}.png" style="height: 24px; width: 24px; object-fit: contain;" onerror="this.style.display='none'">
+                    <span style="margin: 0 4px;">x</span>
+                    <img src="assets/images/${jogo.timeB_id}.png" style="height: 24px; width: 24px; object-fit: contain;" onerror="this.style.display='none'">
+                    <span>${nomeTimeB || "?"}</span>
+                `;
                 textoStatus.textContent = formatarStatus();
                 if (inputEncerrado.checked || inputAndamento.checked) {
                     resultadoDiv.textContent = placarTexto;
@@ -878,18 +926,22 @@
                     estatisticas: { timeA: {}, timeB: {} }
                 };
 
-                let golsJogadoresA = 0, cartoesAmarelosTotalA = 0, cartoesVermelhosTotalA = 0;
-                let golsJogadoresB = 0, cartoesAmarelosTotalB = 0, cartoesVermelhosTotalB = 0;
+                let golsJogadoresA = 0, cartoesAmarelosTotalA = 0, cartoesAzuisTotalA = 0, cartoesVermelhosTotalA = 0;
+                let golsJogadoresB = 0, cartoesAmarelosTotalB = 0, cartoesAzuisTotalB = 0, cartoesVermelhosTotalB = 0;
 
                 function processarInputs(jogadores, timeSectionInputs, timeKey) {
-                    const golsObj = {}, cartoesAmarelosObj = {}, cartoesVermelhosObj = {};
+                    const golsObj = {}, cartoesAmarelosObj = {}, cartoesAzuisObj = {}, cartoesVermelhosObj = {};
                     Object.keys(jogadores).forEach((jogadorId, index) => {
-                        const jogadorEstaSuspensoNesteJogo = timeSectionInputs[index * 3].disabled;
+                        const numInputs = 4; // Agora são 4 inputs por jogador
+                        const jogadorEstaSuspensoNesteJogo = timeSectionInputs[index * numInputs].disabled;
                         if (jogadorEstaSuspensoNesteJogo) return;
-                        const baseIndex = index * 3;
+
+                        const baseIndex = index * numInputs;
                         const golsValRaw = timeSectionInputs[baseIndex].value.trim();
                         const amareloValRaw = timeSectionInputs[baseIndex + 1].value.trim();
-                        const vermelhoValRaw = timeSectionInputs[baseIndex + 2].value.trim();
+                        const azulValRaw = timeSectionInputs[baseIndex + 2].value.trim(); // Pega valor do azul
+                        const vermelhoValRaw = timeSectionInputs[baseIndex + 3].value.trim();
+
                         if (golsValRaw !== "") {
                             const golsInt = parseInt(golsValRaw);
                             golsObj[jogadorId] = golsInt;
@@ -900,13 +952,18 @@
                             cartoesAmarelosObj[jogadorId] = val;
                             if (timeKey === "timeA") cartoesAmarelosTotalA += val; else cartoesAmarelosTotalB += val;
                         }
+                        if (azulValRaw !== "") { // Salva o valor do azul
+                            const val = parseInt(azulValRaw);
+                            cartoesAzuisObj[jogadorId] = val;
+                            if (timeKey === "timeA") cartoesAzuisTotalA += val; else cartoesAzuisTotalB += val;
+                        }
                         if (vermelhoValRaw !== "") {
                             const val = parseInt(vermelhoValRaw);
                             cartoesVermelhosObj[jogadorId] = val;
                             if (timeKey === "timeA") cartoesVermelhosTotalA += val; else cartoesVermelhosTotalB += val;
                         }
                     });
-                    return { golsObj, cartoesAmarelosObj, cartoesVermelhosObj };
+                    return { golsObj, cartoesAmarelosObj, cartoesAzuisObj, cartoesVermelhosObj };
                 }
 
                 const timeAStats = processarInputs(jogadoresTimeA, timeASection.jogadoresInputs, "timeA");
@@ -923,18 +980,22 @@
                     golsContra: golsContraA,
                     gols: Object.keys(timeAStats.golsObj).length ? timeAStats.golsObj : null,
                     cartoesAmarelos: Object.keys(timeAStats.cartoesAmarelosObj).length ? timeAStats.cartoesAmarelosObj : null,
+                    cartoesAzuis: Object.keys(timeAStats.cartoesAzuisObj).length ? timeAStats.cartoesAzuisObj : null,
                     cartoesVermelhos: Object.keys(timeAStats.cartoesVermelhosObj).length ? timeAStats.cartoesVermelhosObj : null,
                     golsTotal: definirGolsTotal(golsJogadoresA, golsContraA, inputEncerrado.checked, inputAndamento.checked),
                     cartoesAmarelosTotal: cartoesAmarelosTotalA,
+                    cartoesAzuisTotal: cartoesAzuisTotalA,
                     cartoesVermelhosTotal: cartoesVermelhosTotalA
                 };
                 updateData.estatisticas.timeB = {
                     golsContra: golsContraB,
                     gols: Object.keys(timeBStats.golsObj).length ? timeBStats.golsObj : null,
                     cartoesAmarelos: Object.keys(timeBStats.cartoesAmarelosObj).length ? timeBStats.cartoesAmarelosObj : null,
+                    cartoesAzuis: Object.keys(timeBStats.cartoesAzuisObj).length ? timeBStats.cartoesAzuisObj : null,
                     cartoesVermelhos: Object.keys(timeBStats.cartoesVermelhosObj).length ? timeBStats.cartoesVermelhosObj : null,
                     golsTotal: definirGolsTotal(golsJogadoresB, golsContraB, inputEncerrado.checked, inputAndamento.checked),
                     cartoesAmarelosTotal: cartoesAmarelosTotalB,
+                    cartoesAzuisTotal: cartoesAzuisTotalB,
                     cartoesVermelhosTotal: cartoesVermelhosTotalB
                 };
 
@@ -1077,7 +1138,7 @@
             
             container.appendChild(abaJogo);
         }
-        
+                
         iniciarCarregamentoDeJogos();
     </script>
 </body>
