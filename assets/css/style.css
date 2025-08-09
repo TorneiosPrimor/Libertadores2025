@@ -609,6 +609,58 @@ h2 {
     padding: 0 1.5rem 2.5rem 1.5rem;
 }
 
+/* RODAPÉ */
+
+.footer{
+    background: none;
+    font-size: var(--small-font-size);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 1rem 0 3rem 0;
+}
+.redeSocial{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: .5rem;
+}
+.cardsRedeSocial{
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    white-space: nowrap;
+}
+.cardsRedeSocial img{
+    height: 1rem;
+    width: auto;
+}
+.btnDownload{
+    display: flex;
+    justify-content: center;
+    gap: .5rem;
+    padding: 10px 20px;
+    font-size: var(--normal-font-size);
+    color: var(--color-2);
+    background: var(--color-9);
+    max-width: 20rem;
+    border-radius: .3rem;
+    text-align: center;
+    text-decoration: none;
+    transition: .2s ease-in-out;
+    box-shadow: .2rem -.2rem .7rem rgb(0, 0, 0, .2);
+}
+.btnDownload:hover{
+    transform: translateY(-.15rem);
+}
+.btnDownload img{
+    height: var(--normal-font-size);
+    width: var(--normal-font-size);
+}
+
 
 /* Adicione esta regra ao seu CSS */
 .placar-cell {
